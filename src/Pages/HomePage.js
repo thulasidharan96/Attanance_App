@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { LoginApi } from '../service/Api';
 import { storeUserData } from '../service/Storage';
-import { Link} from 'react-router-dom';
+import { Link, Navigate } from 'react-router-dom';
+import { isAuthenticated } from '../service/Auth';
 
-export default function LoginPage() {
+export default function HomePage() {
     const initialStateErrors = {
         email: { required: false },
         password: { required: false },
@@ -40,8 +41,6 @@ export default function LoginPage() {
             LoginApi(inputs)
                 .then((response) => {
                     storeUserData(response.data.idToken);
-                    // Redirect to home page after successful login
-                    window.location.href = "/home"; // Replace with your redirect URL
                 })
                 .catch((err) => {
                     if (err.code === "ERR_BAD_REQUEST") {
@@ -57,6 +56,10 @@ export default function LoginPage() {
             setErrors(errorsCopy); // Update errors only after form validation
         }
     };
+
+    if (isAuthenticated()) {
+        return <Navigate to="/dashboard" />;
+    }
 
     return (
         <div>

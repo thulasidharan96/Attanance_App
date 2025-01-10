@@ -1,16 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { initializeApp } from 'firebase/app';
-import { getFirestore, collection, getDocs } from 'firebase/firestore'; // Firestore functions
+import { getFirestore, collection, getDocs } from 'firebase/firestore';
 import { firebaseConfig } from '../service/Api';
-import { getAuth, signOut } from 'firebase/auth'; // Firebase Auth functions
+import { useNavigate, Navigate } from 'react-router-dom'; 
+import { isAuthenticated, logout } from '../service/Auth';
+import Attendance from '../service/Attendance';
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
-const auth = getAuth(app); // Get the Firebase Auth instance
 
-const WelcomeMessage = ({ username }) => (
+const WelcomeMessage = () => (
   <div className="mb-6 p-6 bg-blue-100 rounded-lg shadow-xl">
-    <p className="text-2xl font-semibold text-blue-600">Welcome,!</p>
+    <p className="text-2xl font-semibold text-blue-600">Welcome !</p>
     <p className="text-sm text-gray-600">We're glad to have you on board.</p>
   </div>
 );
@@ -41,12 +42,9 @@ const UserTable = ({ users }) => (
 const DashBoard = () => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
-
-  // Declare username as a constant (Replace with actual username if available)
-  const username = 'User';
+  const navigate = useNavigate(); 
 
   useEffect(() => {
-    // Fetch user data from Firestore
     const fetchUsers = async () => {
       try {
         const querySnapshot = await getDocs(collection(db, 'users'));
@@ -69,14 +67,15 @@ const DashBoard = () => {
 
   const handleLogout = async () => {
     try {
-      await signOut(auth);
+      logout();
       console.log('User signed out');
-      // Optionally, you can redirect the user to the login page after logout
-      // For example: window.location.href = '/login';
+      navigate('/'); // Redirect to login page after logout
     } catch (error) {
       console.error('Error signing out:', error);
     }
   };
+
+  if (!isAuthenticated()) return <Navigate to="/" />;
 
   if (loading) {
     return (
@@ -98,16 +97,15 @@ const DashBoard = () => {
         </div>
       </div>
 
-      <WelcomeMessage  />
+      <WelcomeMessage />
 
       <UserTable users={users} />
 
       <div className="mt-6 text-center">
-        <button
-          className="px-4 py-2 bg-green-600 text-white rounded-lg shadow hover:bg-green-700 mr-6" // Added margin-right for spacing
-        >
-          Take Attanance
-        </button>
+        <Attendance user={users[0]} /> {/* Passing the first user to Attendance */}
+      </div>
+
+      <div className="mt-6 text-center">
         <button
           onClick={handleLogout}
           className="px-4 py-2 bg-red-600 text-white rounded-lg shadow hover:bg-red-700"
