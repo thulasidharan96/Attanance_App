@@ -9,6 +9,23 @@ import Attendance from '../service/Attendance';
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
+// Predefined company location (latitude, longitude)
+const companyLat = 8.79288;
+const companyLon = 78.12069;
+
+// Function to calculate distance between two geographic points
+const getDistance = (lat1, lon1, lat2, lon2) => {
+  const R = 6371; // Radius of the Earth in kilometers
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  const distance = R * c * 1000; // Distance in meters
+  return distance;
+};
+
 const WelcomeMessage = () => (
   <div className="mb-6 p-6 bg-blue-100 rounded-lg shadow-xl">
     <p className="text-2xl font-semibold text-blue-600">Welcome !</p>
@@ -42,6 +59,7 @@ const UserTable = ({ users }) => (
 const DashBoard = () => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [isWithinLocation, setIsWithinLocation] = useState(false); // Track if the user is within the location
   const navigate = useNavigate(); 
 
   useEffect(() => {
@@ -63,7 +81,30 @@ const DashBoard = () => {
     fetchUsers();
   }, []);
 
+  // Get current date
   const todayDate = new Date().toLocaleDateString();
+
+  // Check user location and enable attendance button
+  useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const userLat = position.coords.latitude;
+          const userLon = position.coords.longitude;
+          const distance = getDistance(userLat, userLon, companyLat, companyLon);
+
+          if (distance < 1000) { // If the user is within 1 km of the company location
+            setIsWithinLocation(true);
+          } else {
+            setIsWithinLocation(false);
+          }
+        },
+        (error) => {
+          console.error('Error getting user location:', error);
+        }
+      );
+    }
+  }, []);
 
   const handleLogout = async () => {
     try {
@@ -102,7 +143,11 @@ const DashBoard = () => {
       <UserTable users={users} />
 
       <div className="mt-6 text-center">
-        <Attendance user={users[0]} /> {/* Passing the first user to Attendance */}
+        {isWithinLocation ? (
+          <Attendance user={users[0]} /> // Passing the first user to Attendance
+        ) : (
+          <p className="text-red-600">You must be within the designated location to mark attendance.</p>
+        )}
       </div>
 
       <div className="mt-6 text-center">
