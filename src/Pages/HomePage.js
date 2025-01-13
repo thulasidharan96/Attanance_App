@@ -3,6 +3,8 @@ import { LoginApi } from '../service/Api';
 import { storeUserData } from '../service/Storage';
 import { Link, Navigate } from 'react-router-dom';
 import { isAuthenticated } from '../service/Auth';
+import Header from '../component/Header';
+import Footer from '../component/Footer';
 
 export default function HomePage() {
     const initialStateErrors = {
@@ -62,8 +64,9 @@ export default function HomePage() {
     }
 
     return (
-        <div>
-            <section className="flex justify-center items-center h-screen bg-gray-100">
+        <div className="min-h-screen flex flex-col">
+            <Header />
+            <section className="flex justify-center items-center flex-grow bg-gray-100">
                 <div className="bg-white p-8 rounded-lg shadow-lg w-full max-w-md">
                     <h2 className="text-center text-2xl font-semibold mb-6">Login Now</h2>
                     <form onSubmit={handleSubmit}>
@@ -73,9 +76,10 @@ export default function HomePage() {
                                 type="email"
                                 id="email"
                                 name="email"
-                                className="w-full p-2 border border-gray-300 rounded-md"
+                                className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
                                 onChange={handleInput}
                                 placeholder="Enter your email"
+                                aria-label="Email"
                             />
                             {errors.email.required && <span className="text-red-500 text-xs">Email is required.</span>}
                         </div>
@@ -85,9 +89,10 @@ export default function HomePage() {
                                 type="password"
                                 id="password"
                                 name="password"
-                                className="w-full p-2 border border-gray-300 rounded-md"
+                                className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
                                 onChange={handleInput}
                                 placeholder="Enter your password"
+                                aria-label="Password"
                             />
                             {errors.password.required && <span className="text-red-500 text-xs">Password is required.</span>}
                         </div>
@@ -115,6 +120,7 @@ export default function HomePage() {
                     </form>
                 </div>
             </section>
+            <Footer />
         </div>
     );
 }

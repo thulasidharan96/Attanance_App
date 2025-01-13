@@ -5,6 +5,8 @@ import { firebaseConfig } from '../service/Api';
 import { useNavigate, Navigate } from 'react-router-dom'; 
 import { isAuthenticated, logout } from '../service/Auth';
 import Attendance from '../service/Attendance';
+import Header from '../component/Header';
+import Footer from '../component/Footer';
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
@@ -130,7 +132,9 @@ const DashBoard = () => {
   }
 
   return (
-    <div className="p-8">
+    <div className="min-h-screen flex flex-col">
+      <Header />
+    <div >
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-3xl font-bold text-indigo-700">Dashboard</h2>
         <div className="text-right">
@@ -158,6 +162,8 @@ const DashBoard = () => {
           Logout
         </button>
       </div>
+    </div>
+    <Footer />
     </div>
   );
 };
