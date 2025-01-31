@@ -1,15 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { initializeApp } from 'firebase/app';
-import { getFirestore, collection, getDocs } from 'firebase/firestore';
-import { firebaseConfig } from '../service/Api';
 import { useNavigate, Navigate } from 'react-router-dom'; 
 import { isAuthenticated, logout } from '../service/Auth';
 import Attendance from '../service/Attendance';
 import Header from '../component/Header';
 import Footer from '../component/Footer';
-
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
 
 // Predefined company location (latitude, longitude)
 const companyLat = 8.79288;
@@ -61,18 +55,19 @@ const UserTable = ({ users }) => (
 const DashBoard = () => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [isWithinLocation, setIsWithinLocation] = useState(false); // Track if the user is within the location
+  const [isWithinLocation, setIsWithinLocation] = useState(false);
   const navigate = useNavigate(); 
 
   useEffect(() => {
+    // Mock data fetch - replace with your actual data fetching logic
     const fetchUsers = async () => {
       try {
-        const querySnapshot = await getDocs(collection(db, 'users'));
-        const usersList = querySnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        }));
-        setUsers(usersList);
+        // Simulated user data
+        const mockUsers = [
+          { id: 1, regno: "001", name: "John Doe", email: "john@example.com" },
+          { id: 2, regno: "002", name: "Jane Smith", email: "jane@example.com" }
+        ];
+        setUsers(mockUsers);
       } catch (error) {
         console.error('Error fetching users:', error);
       } finally {
@@ -83,10 +78,8 @@ const DashBoard = () => {
     fetchUsers();
   }, []);
 
-  // Get current date
   const todayDate = new Date().toLocaleDateString();
 
-  // Check user location and enable attendance button
   useEffect(() => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
@@ -94,12 +87,7 @@ const DashBoard = () => {
           const userLat = position.coords.latitude;
           const userLon = position.coords.longitude;
           const distance = getDistance(userLat, userLon, companyLat, companyLon);
-
-          if (distance < 1000) { // If the user is within 1 km of the company location
-            setIsWithinLocation(true);
-          } else {
-            setIsWithinLocation(false);
-          }
+          setIsWithinLocation(distance < 1000);
         },
         (error) => {
           console.error('Error getting user location:', error);
@@ -108,14 +96,9 @@ const DashBoard = () => {
     }
   }, []);
 
-  const handleLogout = async () => {
-    try {
-      logout();
-      console.log('User signed out');
-      navigate('/'); // Redirect to login page after logout
-    } catch (error) {
-      console.error('Error signing out:', error);
-    }
+  const handleLogout = () => {
+    logout();
+    navigate('/');
   };
 
   if (!isAuthenticated()) return <Navigate to="/" />;
@@ -134,36 +117,36 @@ const DashBoard = () => {
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
-    <div >
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-3xl font-bold text-indigo-700">Dashboard</h2>
-        <div className="text-right">
-          <p className="text-sm text-gray-500">{todayDate}</p>
+      <div>
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-3xl font-bold text-indigo-700">Dashboard</h2>
+          <div className="text-right">
+            <p className="text-sm text-gray-500">{todayDate}</p>
+          </div>
+        </div>
+
+        <WelcomeMessage />
+
+        <UserTable users={users} />
+
+        <div className="mt-6 text-center">
+          {isWithinLocation ? (
+            <Attendance user={users[0]} />
+          ) : (
+            <p className="text-red-600">You must be within the designated location to mark attendance.</p>
+          )}
+        </div>
+
+        <div className="mt-6 text-center">
+          <button
+            onClick={handleLogout}
+            className="px-4 py-2 bg-red-600 text-white rounded-lg shadow hover:bg-red-700"
+          >
+            Logout
+          </button>
         </div>
       </div>
-
-      <WelcomeMessage />
-
-      <UserTable users={users} />
-
-      <div className="mt-6 text-center">
-        {isWithinLocation ? (
-          <Attendance user={users[0]} /> // Passing the first user to Attendance
-        ) : (
-          <p className="text-red-600">You must be within the designated location to mark attendance.</p>
-        )}
-      </div>
-
-      <div className="mt-6 text-center">
-        <button
-          onClick={handleLogout}
-          className="px-4 py-2 bg-red-600 text-white rounded-lg shadow hover:bg-red-700"
-        >
-          Logout
-        </button>
-      </div>
-    </div>
-    <Footer />
+      <Footer />
     </div>
   );
 };

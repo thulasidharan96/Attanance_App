@@ -2,44 +2,36 @@ import { useState } from 'react';
 import { RegisterApi } from '../service/Api';
 import { storeUserData } from '../service/Storage';
 import { Link } from 'react-router-dom';
-import { getFirestore, doc, setDoc } from 'firebase/firestore'; // Firestore imports
-import { initializeApp } from 'firebase/app'; // Firebase initialization
-import { firebaseConfig } from '../service/Api';
 import Header from '../component/Header';
 import Footer from '../component/Footer';
-
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
 
 export default function RegisterPage() {
     const initialStateErrors = {
         email: { required: false },
         password: { required: false },
         name: { required: false },
-        regno: { required: false, error: null },
+        RegisterNumber: { required: false, error: null },
         custom_error: null
     };
 
     const [errors, setErrors] = useState(initialStateErrors);
     const [loading, setLoading] = useState(false);
     const [inputs, setInputs] = useState({
+        name: "",
         email: "",
         password: "",
-        name: "",
-        regno: ""
+        RegisterNumber: ""
     });
 
     const handleInput = (event) => {
         setInputs({ ...inputs, [event.target.name]: event.target.value });
     };
 
-    const handleSubmit = async (event) => {
+    const handleSubmit = (event) => {
         event.preventDefault();
         let errorsCopy = { ...initialStateErrors };
         let hasError = false;
-
-        // Validation logic
+    
         if (inputs.name === "") {
             errorsCopy.name.required = true;
             hasError = true;
@@ -52,52 +44,38 @@ export default function RegisterPage() {
             errorsCopy.password.required = true;
             hasError = true;
         }
-        if (inputs.regno === "") {
-            errorsCopy.regno = { required: true, error: "Registration number is required." };
+        if (inputs.RegisterNumber === "") {
+            errorsCopy.RegisterNumber = { required: true, error: "Registration number is required." };
             hasError = true;
-        } else if (!inputs.regno.startsWith("9533")) {
-            errorsCopy.regno = { required: false, error: "Please provide a valid registration number." };
+        } else if (!inputs.RegisterNumber.startsWith("9533")) {
+            errorsCopy.RegisterNumber = { required: false, error: "Please provide a valid registration number." };
             hasError = true;
         }
-
+    
         if (!hasError) {
             setLoading(true);
-            try {
-                const response = await RegisterApi(inputs);
-                storeUserData(response.data.idToken);
-
-                // Store data in Firestore
-                const userRef = doc(db, "users", response.data.localId); // Use localId as the document ID
-                await setDoc(userRef, {
-                    name: inputs.name,
-                    email: inputs.email,
-                    regno: inputs.regno,
-                    createdAt: new Date().toISOString()
+            RegisterApi(inputs)
+                .then((response) => {
+                    storeUserData(response.data.idToken);
+                    window.location.href = "/";
+                })
+                .catch((err) => {
+                    if (err.response?.data?.error?.message === "EMAIL_EXISTS") {
+                        setErrors({ ...errorsCopy, custom_error: "Email already registered!" });
+                    } else if (String(err.response?.data?.error?.message).includes('WEAK_PASSWORD')) {
+                        setErrors({ ...errorsCopy, custom_error: "Password must be at least 6 characters!" });
+                    } else {
+                        setErrors({ ...errorsCopy, custom_error: "An error occurred during registration." });
+                    }
+                })
+                .finally(() => {
+                    setLoading(false);
                 });
-
-                // Reset inputs after successful registration
-                setInputs({
-                    email: "",
-                    password: "",
-                    name: "",
-                    regno: ""
-                });
-
-                // Redirect to dashboard after successful registration
-                window.location.href = "/";
-            } catch (err) {
-                if (err.response.data.error.message === "EMAIL_EXISTS") {
-                    setErrors({ ...errorsCopy, custom_error: "Email already registered!" });
-                } else if (String(err.response.data.error.message).includes('WEAK_PASSWORD')) {
-                    setErrors({ ...errorsCopy, custom_error: "Password must be at least 6 characters!" });
-                }
-            } finally {
-                setLoading(false);
-            }
         } else {
             setErrors(errorsCopy);
         }
     };
+    
 
     return (
         <div className="min-h-screen flex flex-col bg-gray-100">
@@ -149,21 +127,21 @@ export default function RegisterPage() {
                             {errors.password.required && <span className="text-sm text-red-500">Password is required.</span>}
                         </div>
                         <div>
-                            <label htmlFor="regno" className="block text-sm font-medium text-gray-700">
+                            <label htmlFor="RegisterNumber" className="block text-sm font-medium text-gray-700">
                                 Registration Number
                             </label>
                             <input
                                 type="text"
-                                name="regno"
-                                id="regno"
-                                value={inputs.regno}
+                                name="RegisterNumber"
+                                id="RegisterNumber"
+                                value={inputs.RegisterNumber}
                                 onChange={handleInput}
                                 className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                             />
-                            {errors.regno.required && (
+                            {errors.RegisterNumber.required && (
                                 <span className="text-sm text-red-500">Registration number is required.</span>
                             )}
-                            {errors.regno.error && <span className="text-sm text-red-500">{errors.regno.error}</span>}
+                            {errors.RegisterNumber.error && <span className="text-sm text-red-500">{errors.RegisterNumber.error}</span>}
                         </div>
                         {errors.custom_error && <p className="text-sm text-red-500">{errors.custom_error}</p>}
                         {loading && (
