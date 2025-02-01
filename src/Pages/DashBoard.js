@@ -117,38 +117,54 @@ const DashBoard = () => {
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
-      <div>
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-3xl font-bold text-indigo-700">Dashboard</h2>
-          <div className="text-right">
-            <p className="text-sm text-gray-500">{todayDate}</p>
+      
+      <main className="flex-grow bg-slate-400 py-8">
+        <div className="container mx-auto max-w-4xl px-4">
+          {/* Header Section */}
+            <div className="flex justify-between items-center">
+              <h2 className="text-3xl font-bold text-indigo-700">Dashboard</h2>
+              <div className="text-right">
+                <p className="text-sm text-gray-500">{todayDate}</p>
+              </div>
+            </div>
+  
+          {/* Welcome Message Section */}
+          <div className="mb-6">
+            <WelcomeMessage />
           </div>
+  
+          {/* User Table Section */}
+          <div className="mb-6">
+            <UserTable users={users} />
+          </div>
+  
+          {/* Attendance Section */}
+            <div className="text-center">
+              {isWithinLocation ? (
+                <Attendance user={users[0]} />
+              ) : (
+                <p className="text-red-600">
+                  You must be within the designated location to mark attendance.
+                </p>
+              )}
+            </div>
+  
+          {/* Logout Section */}
+            <div className="text-center">
+              <button
+                onClick={handleLogout}
+                className="px-6 py-2 mt-4 bg-red-600 text-white rounded-lg shadow hover:bg-red-700 transition duration-200"
+              >
+                Logout
+              </button>
+            </div>
         </div>
-
-        <WelcomeMessage />
-
-        <UserTable users={users} />
-
-        <div className="mt-6 text-center">
-          {isWithinLocation ? (
-            <Attendance user={users[0]} />
-          ) : (
-            <p className="text-red-600">You must be within the designated location to mark attendance.</p>
-          )}
-        </div>
-
-        <div className="mt-6 text-center">
-          <button
-            onClick={handleLogout}
-            className="px-4 py-2 bg-red-600 text-white rounded-lg shadow hover:bg-red-700"
-          >
-            Logout
-          </button>
-        </div>
-      </div>
+      </main>
+  
       <Footer />
     </div>
   );
+  
 };
 
 export default DashBoard;

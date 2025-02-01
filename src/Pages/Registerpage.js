@@ -78,65 +78,69 @@ export default function RegisterPage() {
     
 
     return (
-        <div className="min-h-screen flex flex-col bg-gray-100">
+        <div className="min-h-screen flex flex-col">
             <Header />
-            <div className="flex flex-col items-center justify-center p-4 space-y-6 sm:space-y-8 lg:space-y-10">
+            <main className="flex-grow flex flex-col items-center justify-center bg-slate-400">
                 <div className="w-full max-w-md p-8 bg-white shadow-md rounded-lg">
-                    <h2 className="text-2xl font-bold text-center text-gray-800">Register Now</h2>
+                    <h2 className="text-2xl font-bold text-center">Register Now</h2>
                     <form onSubmit={handleSubmit} className="space-y-4">
                         <div>
-                            <label htmlFor="name" className="block text-sm font-medium text-gray-700">
+                            <label htmlFor="name" className="block text-sm font-medium text-gray-700 py-1">
                                 Name
                             </label>
                             <input
                                 type="text"
                                 name="name"
                                 id="name"
+                                placeholder='Enter your name'
                                 value={inputs.name}
                                 onChange={handleInput}
-                                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                                className="mt-1 block w-full px-3 py-2 border border-black rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                             />
                             {errors.name.required && <span className="text-sm text-red-500">Name is required.</span>}
                         </div>
                         <div>
-                            <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+                            <label htmlFor="email" className="block text-sm font-medium text-gray-700 py-1">
                                 Email
                             </label>
                             <input
                                 type="email"
                                 name="email"
                                 id="email"
+                                placeholder='Enter your email'
                                 value={inputs.email}
                                 onChange={handleInput}
-                                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                                className="mt-1 block w-full px-3 py-2 border border-black rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                             />
                             {errors.email.required && <span className="text-sm text-red-500">Email is required.</span>}
                         </div>
                         <div>
-                            <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+                            <label htmlFor="password" className="block text-sm font-medium text-gray-700 py-1">
                                 Password
                             </label>
                             <input
                                 type="password"
                                 name="password"
                                 id="password"
+                                placeholder='Enter your password'
                                 value={inputs.password}
                                 onChange={handleInput}
-                                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                                className="mt-1 block w-full px-3 py-2 border border-black rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                             />
                             {errors.password.required && <span className="text-sm text-red-500">Password is required.</span>}
                         </div>
                         <div>
-                            <label htmlFor="RegisterNumber" className="block text-sm font-medium text-gray-700">
+                            <label htmlFor="RegisterNumber" className="block text-sm font-medium text-gray-700 py-1">
                                 Registration Number
                             </label>
                             <input
                                 type="text"
                                 name="RegisterNumber"
                                 id="RegisterNumber"
+                                placeholder='Enter your registration number'
                                 value={inputs.RegisterNumber}
                                 onChange={handleInput}
-                                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                                className="mt-1 block w-full px-3 py-2 border border-black rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                             />
                             {errors.RegisterNumber.required && (
                                 <span className="text-sm text-red-500">Registration number is required.</span>
@@ -157,11 +161,11 @@ export default function RegisterPage() {
                             Register
                         </button>
                     </form>
-                    <p className="text-sm text-center text-gray-600">
+                    <p className="text-sm text-center mt-2 text-gray-600">
                         Already have an account? <Link to="/" className="text-indigo-600 hover:underline">Login</Link>
                     </p>
                 </div>
-            </div>
+            </main>
             <Footer />
         </div>
     );
