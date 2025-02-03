@@ -4,6 +4,7 @@ import HomePage from './Pages/HomePage';
 import RegisterPage from './Pages/Registerpage';
 import DashBoard from './Pages/DashBoard';
 import MissingPage from './Pages/MissingPage';
+import AdminDashboard from './Pages/AdminDashboard';
 
 function App() {
   return (
@@ -14,6 +15,7 @@ function App() {
         <Route path='/homepage' element={<HomePage />}/>
         <Route path='/dashboard' element={<DashBoard />}/>
         <Route path='/register' element={<RegisterPage />} />
+        <Route path='/admin' element={<AdminDashboard />} />
         <Route path='*' element={<MissingPage/>}/>
       </Routes>
     </BrowserRouter>

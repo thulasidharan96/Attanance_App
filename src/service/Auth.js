@@ -14,7 +14,6 @@ export const isAuthenticated = () => {
       removeUserData();
       return false;
     }
-    
     return true;
   } catch (error) {
     removeUserData();
@@ -24,4 +23,5 @@ export const isAuthenticated = () => {
 
 export const logout = () => {
   removeUserData();
+  window.location.href = '/';
 };

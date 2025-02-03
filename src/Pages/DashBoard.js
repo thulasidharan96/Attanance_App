@@ -76,8 +76,8 @@ const DashBoard = () => {
   const [notification, setNotification] = useState(null);
   const navigate = useNavigate();
   const userId = localStorage.getItem("userId");
-  const [userName, setUserName] = useState(localStorage.getItem("name") || "");
-  const [registerNumber, setRegisterNumber] = useState(localStorage.getItem("RegisterNumber") || "");
+  const [userName] = useState(localStorage.getItem("name") || "");
+  const [registerNumber] = useState(localStorage.getItem("RegisterNumber") || "");
 
   const showNotification = (message, type) => {
     setNotification({ message, type });
