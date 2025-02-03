@@ -1,20 +1,24 @@
 import { useState } from 'react';
 import { RegisterApi } from '../service/Api';
-import { storeUserData } from '../service/Storage';
 import { Link } from 'react-router-dom';
 import Header from '../component/Header';
 import Footer from '../component/Footer';
+import { isAuthenticated } from '../service/Auth';
+import { useNavigate } from 'react-router-dom';
+
 
 export default function RegisterPage() {
-    const initialStateErrors = {
-        email: { required: false },
-        password: { required: false },
-        name: { required: false },
-        RegisterNumber: { required: false, error: null },
+
+    const Navigate = useNavigate();
+    const initialErrors = {
+        name: null,
+        email: null,
+        password: null,
+        RegisterNumber: null,
         custom_error: null
     };
 
-    const [errors, setErrors] = useState(initialStateErrors);
+    const [errors, setErrors] = useState(initialErrors);
     const [loading, setLoading] = useState(false);
     const [inputs, setInputs] = useState({
         name: "",
@@ -24,58 +28,80 @@ export default function RegisterPage() {
     });
 
     const handleInput = (event) => {
-        setInputs({ ...inputs, [event.target.name]: event.target.value });
+        const { name, value } = event.target;
+        setInputs({ ...inputs, [name]: value });
+        setErrors({ ...errors, [name]: null, custom_error: null });
     };
 
-    const handleSubmit = (event) => {
-        event.preventDefault();
-        let errorsCopy = { ...initialStateErrors };
+    const validateInputs = () => {
+        const newErrors = {};
         let hasError = false;
-    
-        if (inputs.name === "") {
-            errorsCopy.name.required = true;
+
+        if (!inputs.name.trim()) {
+            newErrors.name = "Name is required.";
             hasError = true;
         }
-        if (inputs.email === "") {
-            errorsCopy.email.required = true;
+
+        if (!inputs.email.trim()) {
+            newErrors.email = "Email is required.";
             hasError = true;
         }
-        if (inputs.password === "") {
-            errorsCopy.password.required = true;
+
+        if (!inputs.password) {
+            newErrors.password = "Password is required.";
+            hasError = true;
+        } else if (inputs.password.length < 8 || !/[A-Z]/.test(inputs.password) || !/[0-9]/.test(inputs.password)) {
+            newErrors.password = "Password must be at least 8 characters, include a number, and an uppercase letter.";
             hasError = true;
         }
-        if (inputs.RegisterNumber === "") {
-            errorsCopy.RegisterNumber = { required: true, error: "Registration number is required." };
+
+        if (!inputs.RegisterNumber.trim()) {
+            newErrors.RegisterNumber = "Registration number is required.";
             hasError = true;
         } else if (!inputs.RegisterNumber.startsWith("9533")) {
-            errorsCopy.RegisterNumber = { required: false, error: "Please provide a valid registration number." };
+            newErrors.RegisterNumber = "Please provide a valid registration number.";
             hasError = true;
         }
+
+        setErrors(newErrors);
+        return !hasError;
+    };
+
     
-        if (!hasError) {
-            setLoading(true);
-            RegisterApi(inputs)
-                .then((response) => {
-                    storeUserData(response.data.idToken);
-                    window.location.href = "/";
-                })
-                .catch((err) => {
-                    if (err.response?.data?.error?.message === "EMAIL_EXISTS") {
-                        setErrors({ ...errorsCopy, custom_error: "Email already registered!" });
-                    } else if (String(err.response?.data?.error?.message).includes('WEAK_PASSWORD')) {
-                        setErrors({ ...errorsCopy, custom_error: "Password must be at least 6 characters!" });
-                    } else {
-                        setErrors({ ...errorsCopy, custom_error: "An error occurred during registration." });
-                    }
-                })
-                .finally(() => {
-                    setLoading(false);
-                });
-        } else {
-            setErrors(errorsCopy);
+
+    const handleSubmit = async (event) => {
+        event.preventDefault();
+
+        if (!validateInputs()) return;
+
+        setLoading(true);
+
+        try {
+            const response = await RegisterApi(inputs);
+            if (response?.status === 201) {
+                window.location.href = "/";
+            } else {
+                setErrors({ ...errors, custom_error: "Unexpected response during registration." });
+            }
+        } catch (err) {
+            const errorMessage = err?.response?.data?.error;
+            let customError = "An error occurred during registration.";
+
+            if (errorMessage === "User already exists") {
+                customError = "User already exists. Please use a different email.";
+            } else if (errorMessage === "Email already registered") {
+                customError = "Email already registered!";
+            } else if (errorMessage === "Invalid Registration Number") {
+                customError = "Register number already exists.";
+            } else if (errorMessage?.includes("Password must be")) {
+                customError = "Password must be at least 6 characters!";
+            }
+
+            setErrors({ ...errors, custom_error: customError });
+        } finally {
+            setLoading(false);
         }
     };
-    
 
     return (
         <div className="min-h-screen flex flex-col">
@@ -97,8 +123,9 @@ export default function RegisterPage() {
                                 onChange={handleInput}
                                 className="mt-1 block w-full px-3 py-2 border border-black rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                             />
-                            {errors.name.required && <span className="text-sm text-red-500">Name is required.</span>}
+                            {errors.name && <span className="text-sm text-red-500">{errors.name}</span>}
                         </div>
+
                         <div>
                             <label htmlFor="email" className="block text-sm font-medium text-gray-700 py-1">
                                 Email
@@ -112,8 +139,9 @@ export default function RegisterPage() {
                                 onChange={handleInput}
                                 className="mt-1 block w-full px-3 py-2 border border-black rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                             />
-                            {errors.email.required && <span className="text-sm text-red-500">Email is required.</span>}
+                            {errors.email && <span className="text-sm text-red-500">{errors.email}</span>}
                         </div>
+
                         <div>
                             <label htmlFor="password" className="block text-sm font-medium text-gray-700 py-1">
                                 Password
@@ -127,8 +155,9 @@ export default function RegisterPage() {
                                 onChange={handleInput}
                                 className="mt-1 block w-full px-3 py-2 border border-black rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                             />
-                            {errors.password.required && <span className="text-sm text-red-500">Password is required.</span>}
+                            {errors.password && <span className="text-sm text-red-500">{errors.password}</span>}
                         </div>
+
                         <div>
                             <label htmlFor="RegisterNumber" className="block text-sm font-medium text-gray-700 py-1">
                                 Registration Number
@@ -142,17 +171,17 @@ export default function RegisterPage() {
                                 onChange={handleInput}
                                 className="mt-1 block w-full px-3 py-2 border border-black rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                             />
-                            {errors.RegisterNumber.required && (
-                                <span className="text-sm text-red-500">Registration number is required.</span>
-                            )}
-                            {errors.RegisterNumber.error && <span className="text-sm text-red-500">{errors.RegisterNumber.error}</span>}
+                            {errors.RegisterNumber && <span className="text-sm text-red-500">{errors.RegisterNumber}</span>}
                         </div>
+
                         {errors.custom_error && <p className="text-sm text-red-500">{errors.custom_error}</p>}
+
                         {loading && (
                             <div className="flex justify-center">
                                 <div className="animate-spin h-6 w-6 border-4 border-blue-400 border-t-transparent rounded-full"></div>
                             </div>
                         )}
+
                         <button
                             type="submit"
                             disabled={loading}
@@ -161,6 +190,7 @@ export default function RegisterPage() {
                             Register
                         </button>
                     </form>
+
                     <p className="text-sm text-center mt-2 text-gray-600">
                         Already have an account? <Link to="/" className="text-indigo-600 hover:underline">Login</Link>
                     </p>

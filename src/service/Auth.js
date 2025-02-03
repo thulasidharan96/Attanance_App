@@ -1,10 +1,9 @@
-import { getUserData, removeUserData } from "./Storage"
+// Authentication Functions
+import { getUserData, removeUserData } from './Storage';
 
+export const isAuthenticated = () => Boolean(getUserData());
 
-export const isAuthenticated = ()=>{
-    return getUserData()!=null?true:false;
-}
-
-export const logout = ()=>{
-    removeUserData();
-}
+export const logout = () => {
+  removeUserData();
+  // Optionally handle redirects or notifications upon logout.
+};

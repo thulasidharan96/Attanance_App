@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { LoginApi } from '../service/Api';
-import { storeUserData } from '../service/Storage';
+import { storeUserData, storeUserId } from '../service/Storage'; 
 import { Link, Navigate } from 'react-router-dom';
 import { isAuthenticated } from '../service/Auth';
 import Header from '../component/Header';
@@ -24,9 +24,9 @@ export default function HomePage() {
         setInputs({ ...inputs, [event.target.name]: event.target.value });
     };
 
-    const handleSubmit = (event) => {
+    const handleSubmit = async (event) => {
         event.preventDefault();
-        let errorsCopy = { ...initialStateErrors }; // Create a copy to avoid direct mutation
+        let errorsCopy = { ...initialStateErrors };
         let hasError = false;
 
         if (inputs.email === "") {
@@ -38,24 +38,30 @@ export default function HomePage() {
             hasError = true;
         }
 
-        if (!hasError) {
+        if (hasError) {
+            setErrors(errorsCopy);
+            return;
+        }
+
+        try {
             setLoading(true);
-            LoginApi(inputs)
-                .then((response) => {
-                    storeUserData(response.data.idToken);
-                })
-                .catch((err) => {
-                    if (err.code === "ERR_BAD_REQUEST") {
-                        setErrors({ ...errorsCopy, custom_error: "Invalid Credentials." });
-                    } else {
-                        setErrors({ ...errorsCopy, custom_error: "An error occurred." });
-                    }
-                })
-                .finally(() => {
-                    setLoading(false);
-                });
-        } else {
-            setErrors(errorsCopy); // Update errors only after form validation
+            const response = await LoginApi(inputs);
+            const { token } = response.data;
+            storeUserData(token);
+            storeUserId(response.data.userId);
+            
+            if (isAuthenticated()) {
+                return <Navigate to="/dashboard" />;
+            }
+        } catch (err) {
+            setErrors({
+                ...errorsCopy,
+                custom_error: err.code === "ERR_BAD_REQUEST" 
+                    ? "Invalid Credentials." 
+                    : "An error occurred."
+            });
+        } finally {
+            setLoading(false);
         }
     };
 
