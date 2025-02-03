@@ -3,13 +3,10 @@ import { RegisterApi } from '../service/Api';
 import { Link } from 'react-router-dom';
 import Header from '../component/Header';
 import Footer from '../component/Footer';
-import { isAuthenticated } from '../service/Auth';
-import { useNavigate } from 'react-router-dom';
 
 
 export default function RegisterPage() {
 
-    const Navigate = useNavigate();
     const initialErrors = {
         name: null,
         email: null,

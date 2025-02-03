@@ -1,184 +1,210 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, Navigate } from "react-router-dom";
 import { isAuthenticated, logout } from "../service/Auth";
-import Attendance from "../service/Attendance";
 import Header from "../component/Header";
 import Footer from "../component/Footer";
-import { UserApi } from "../service/Api";
+import { AttendanceApi, UserApi } from "../service/Api";
 
-// Predefined company location (latitude, longitude)
-const companyLat = 8.79288;
-const companyLon = 78.12069;
+const COMPANY_LAT = 8.79288;
+const COMPANY_LON = 78.12069;
+const LOCATION_RADIUS = 1000;
 
-// Function to calculate distance between two geographic points
 const getDistance = (lat1, lon1, lat2, lon2) => {
-  const R = 6371; // Radius of the Earth in kilometers
+  const R = 6371;
   const dLat = ((lat2 - lat1) * Math.PI) / 180;
   const dLon = ((lon2 - lon1) * Math.PI) / 180;
   const a =
     Math.sin(dLat / 2) * Math.sin(dLat / 2) +
     Math.cos((lat1 * Math.PI) / 180) *
-      Math.cos((lat2 * Math.PI) / 180) *
-      Math.sin(dLon / 2) *
-      Math.sin(dLon / 2);
+    Math.cos((lat2 * Math.PI) / 180) *
+    Math.sin(dLon / 2) *
+    Math.sin(dLon / 2);
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  const distance = R * c * 1000; // Distance in meters
-  return distance;
+  return R * c * 1000;
 };
 
-const UserTable = ({ users }) => (
-  <div className="overflow-x-auto shadow-xl rounded-lg bg-white max-h-96">
-    <table className="min-w-full table-auto border-collapse mt-6">
-      <thead className="bg-gradient-to-r from-indigo-600 to-blue-500 text-white">
+const Notification = ({ message, type }) => (
+  <div className={`fixed top-4 right-4 px-6 py-3 rounded-lg shadow-lg z-50 ${
+    type === 'success' ? 'bg-green-500' : 'bg-red-500'
+  } text-white`}>
+    {message}
+  </div>
+);
+
+const UserTable = ({ users = [] }) => (
+  <div className="overflow-y-auto shadow-xl rounded-lg bg-white p-2" style={{ maxHeight: "400px" }}>
+    <table className="min-w-full table-auto border-collapse">
+      <thead className="bg-gradient-to-r from-indigo-600 to-blue-500 text-white sticky top-0">
         <tr>
           <th className="border px-6 py-3 text-left">Date</th>
           <th className="border px-6 py-3 text-left">Attendance Status</th>
         </tr>
       </thead>
       <tbody>
-        {users.map((user) => (
-          <tr
-            key={user.id}
-            className="hover:bg-gray-100 transition duration-200"
-          >
-            <td className="border px-4 py-3 font-bold">{user.dateOnly}</td>
-            <td className="border px-4 py-3 ">
-              <span
-                className={
-                  user.attendanceStatus === "present"
-                    ? "text-green-600 font-bold"  // Green for Present
-                    : user.attendanceStatus === "late"
-                    ? "text-yellow-500 font-bold"  // Yellow for Late
-                    : user.attendanceStatus === "Absent"
-                    ? "text-red-600 font-bold"  // Red for Absent
-                    : "text-gray-600"  // Default to gray if no status
-                }
-              >
-                {user.attendanceStatus}
-              </span>
+        {users.length > 0 ? (
+          users.map((user) => (
+            <tr key={user.id} className="hover:bg-gray-100 transition duration-200">
+              <td className="border px-4 py-3 font-bold">{user.dateOnly}</td>
+              <td className="border px-4 py-3">
+                <span className={`font-bold ${
+                  user.attendanceStatus === "present" ? "text-green-600" :
+                  user.attendanceStatus === "late" ? "text-yellow-500" :
+                  user.attendanceStatus === "Absent" ? "text-red-600" : "text-gray-600"
+                }`}>
+                  {user.attendanceStatus}
+                </span>
+              </td>
+            </tr>
+          ))
+        ) : (
+          <tr>
+            <td colSpan="2" className="text-center py-4 text-gray-600">
+              No attendance data available.
             </td>
           </tr>
-        ))}
+        )}
       </tbody>
     </table>
   </div>
 );
 
-
-
 const DashBoard = () => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isWithinLocation, setIsWithinLocation] = useState(false);
+  const [processing, setProcessing] = useState(false);
+  const [notification, setNotification] = useState(null);
   const navigate = useNavigate();
+  const userId = localStorage.getItem("userId");
+  const [userName, setUserName] = useState(localStorage.getItem("name") || "");
+  const [registerNumber, setRegisterNumber] = useState(localStorage.getItem("RegisterNumber") || "");
+
+  const showNotification = (message, type) => {
+    setNotification({ message, type });
+    setTimeout(() => setNotification(null), 3000);
+  };
+
+  const fetchUsers = async () => {
+    try {
+      setLoading(true);
+      const response = await UserApi(userId);
+      setUsers(response.data);
+    } catch (error) {
+      showNotification("Failed to fetch attendance data", "error");
+      console.error("Error fetching users:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    // Fetch user data from the API
-    const fetchUsers = async () => {
-      try {
-        const response = await UserApi(); // Fetch real user data
-        console.log(response.data); // Log the data for debugging
-        setUsers(response.data); // Update state with API response
-      } catch (error) {
-        console.error("Error fetching users:", error);
-      } finally {
-        setLoading(false); // Update loading state
+    if (userId) fetchUsers();
+  }, [userId]);
+
+  const handleClick = async () => {
+    setProcessing(true);
+    try {
+      const response = await AttendanceApi();
+      if (response.status === 201) {
+        showNotification("Attendance marked successfully!", "success");
+        fetchUsers();
       }
-    };
+    } catch (error) {
+      showNotification("Failed to mark attendance", "error");
+      console.error("Error marking attendance:", error);
+    } finally {
+      setProcessing(false);
+    }
+  };
 
-    fetchUsers(); // Call the fetch function
-  }, []);
-
-  // Geolocation check to ensure user is within the company radius
   useEffect(() => {
     if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
+      const watchId = navigator.geolocation.watchPosition(
         (position) => {
-          const userLat = position.coords.latitude;
-          const userLon = position.coords.longitude;
-          const distance = getDistance(userLat, userLon, companyLat, companyLon);
-          setIsWithinLocation(distance < 1000); // Distance threshold: 1000 meters
+          const distance = getDistance(
+            position.coords.latitude,
+            position.coords.longitude,
+            COMPANY_LAT,
+            COMPANY_LON
+          );
+          setIsWithinLocation(distance < LOCATION_RADIUS);
         },
-        (error) => {
-          console.error("Error getting user location:", error);
-        }
+        (error) => console.error("Location error:", error),
+        { enableHighAccuracy: true }
       );
+      return () => navigator.geolocation.clearWatch(watchId);
     }
   }, []);
 
-  const handleUserClick = () => {
-    console.log("User clicked to sync data");
-    UserApi().then((response) => {
-      console.log(response.data);
-      setUsers(response.data); // Sync data from the API
-    });
-  };
-
   const handleLogout = () => {
     logout();
-    navigate("/"); // Navigate to the login screen
+    navigate("/");
   };
 
-  if (!isAuthenticated()) return <Navigate to="/" />; // Redirect if not authenticated
-
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center h-screen">
-        <div className="flex items-center space-x-2 text-blue-600">
-          <span>Loading...</span>
-          <div className="animate-spin w-5 h-5 border-4 border-t-4 border-blue-600 rounded-full"></div>
-        </div>
-      </div>
-    );
+  if (!isAuthenticated()) {
+    return <Navigate to="/" />;
   }
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col bg-slate-400">
+      {notification && <Notification {...notification} />}
       <Header />
-
-      <main className="flex-grow bg-slate-400 py-8">
-        <div className="container mx-auto max-w-4xl px-4 mb-4">
-          {/* Header Section */}
-          <div className="flex justify-between items-center mb-5">
-            <h2 className="text-3xl font-bold text-indigo-700">Dashboard</h2>
-
-            {/* Logout Section */}
-            <div className="flex justify-between item-center text-center">
+      <main className="flex-grow flex flex-col">
+        <section className="flex-grow flex justify-center items-center p-4">
+          <div className="container mx-auto max-w-4xl">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-3xl font-semibold text-indigo-700">Dashboard</h2>
               <button
                 onClick={handleLogout}
-                className="px-2 py-2 bg-red-600 text-white rounded-lg shadow hover:bg-red-700 transition duration-200"
+                className="px-4 py-2 bg-red-600 text-white rounded-lg shadow-lg hover:bg-red-700 transition-all"
               >
                 Logout
               </button>
             </div>
-          </div>
 
-          {/* User Table Section */}
-          <div className="mb-6">
-            <UserTable users={users} />
-            <div className="text-center">
+            <div className="bg-white p-4 mb-4 rounded-lg shadow-md">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="font-semibold text-gray-700">Name:</div>
+                <div className="text-gray-800">{userName}</div>
+                <div className="font-semibold text-gray-700">Register Number:</div>
+                <div className="text-gray-800">{registerNumber}</div>
+              </div>
+            </div>
+
+            {loading ? (
+              <div className="text-center py-4">Loading...</div>
+            ) : (
+              <UserTable users={users} />
+            )}
+
+            <div className="flex justify-between mt-6">
+              {isWithinLocation ? (
+                <button
+                  onClick={handleClick}
+                  disabled={processing}
+                  className={`px-4 py-3 text-white rounded-lg shadow-lg transition-colors ${
+                    processing ? 'bg-gray-500' : 'bg-green-600 hover:bg-green-700'
+                  }`}
+                >
+                  {processing ? "Processing..." : "Take Attendance"}
+                </button>
+              ) : (
+                <p className="text-red-600 font-semibold">
+                  You must be within the designated location to mark attendance.
+                </p>
+              )}
+
               <button
-                onClick={handleUserClick}
-                className="px-3 py-3 mt-2 bg-green-600 text-white rounded-lg shadow hover:bg-green-700 transition-colors duration-200"
+                onClick={fetchUsers}
+                disabled={loading}
+                className="px-4 py-3 bg-blue-600 text-white rounded-lg shadow-lg hover:bg-blue-700 transition-colors"
               >
-                Sync Data
+                {loading ? "Syncing..." : "Sync Data"}
               </button>
             </div>
           </div>
-
-          {/* Attendance Section */}
-          <div className="text-center">
-            {isWithinLocation ? (
-              <Attendance user={users[0]} />
-            ) : (
-              <p className="text-red-600">
-                You must be within the designated location to mark attendance.
-              </p>
-            )}
-          </div>
-        </div>
+        </section>
       </main>
-
       <Footer />
     </div>
   );
