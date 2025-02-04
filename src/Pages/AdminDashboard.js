@@ -1,95 +1,104 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate, Navigate } from "react-router-dom";
+import { Navigate } from "react-router-dom";
 import { isAuthenticated, logout } from "../service/Auth";
 import Header from "../component/Header";
 import Footer from "../component/Footer";
-import { CurrentAttendanceByDate } from "../service/Api";
+import { CurrentAttendanceByDate, studentbyRegisterNo } from "../service/Api";
 
 const AdminDashboard = () => {
-  const navigate = useNavigate();
   const [attendanceData, setAttendanceData] = useState([]);
+  const [attendanceReport, setAttendanceReport] = useState([]);
+  const [registerNumber, setRegisterNumber] = useState("");
   const [activeTab, setActiveTab] = useState("attendance");
+  const [previewData, setPreviewData] = useState([]);
+  const [loading, setLoading] = useState(false);
 
-  // Fetch attendance data from API
+  const handleLogout = () => logout();
+
   const fetchAttendanceData = async () => {
+    setLoading(true);
     try {
       const response = await CurrentAttendanceByDate();
-      // Access the studentAttendance array from the response
       const data = response.data.studentAttendance;
-      
-      if (Array.isArray(data)) {
-        setAttendanceData(data);
-      } else {
-        console.warn("Student attendance data is not an array:", data);
-        setAttendanceData([]);
-      }
+      setAttendanceData(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error("Error fetching attendance data:", error);
-      setAttendanceData([]);
+      alert("Failed to fetch attendance data. Please try again later.");
+    } finally {
+      setLoading(false);
     }
   };
-  
+
   useEffect(() => {
     fetchAttendanceData();
-  }, []); // Empty dependency array to ensure it only runs once when the component mounts
+  }, []);
 
   if (!isAuthenticated()) {
     return <Navigate to="/" />;
   }
 
-  const filterButtonStyle = "px-6 py-2 rounded-lg transition-colors text-white";
-  const tabButtonStyle = "px-6 py-3 rounded-lg font-medium transition-all";
-
-  // Helper function to get attendance stats
   const getAttendanceStats = () => {
-    // Initialize counters for present and absent students
     let presentCount = 0;
-    let absentCount = 0;
+    let leaveCount = 0;
 
-    // Loop through attendance data to count present and absent students
-    attendanceData.forEach((item) => {
-      if (item.attendanceStatus === "present") {
-        presentCount++;
-      } else if (item.attendanceStatus === "absent") {
-        absentCount++;
-      }
+    attendanceData?.forEach((item) => {
+      if (item.attendanceStatus === "present") presentCount++;
+      else if (item.attendanceStatus === "leave") leaveCount++;
     });
 
-    // Total students count is the length of the attendanceData array
-    const totalStudents = attendanceData.length;
-
-    return { totalStudents, presentCount, absentCount };
+    return { totalStudents: attendanceData.length, presentCount, leaveCount };
   };
 
-  const { totalStudents, presentCount, absentCount } = getAttendanceStats();
+  const { totalStudents, presentCount, leaveCount } = getAttendanceStats();
+
+  const handleSearch = async () => {
+    if (!registerNumber) {
+      alert("Please enter a register number.");
+      return;
+    }
+    try {
+      setLoading(true);
+      const response = await studentbyRegisterNo(registerNumber);
+      setAttendanceReport(response.data.records || []);
+    } catch (error) {
+      console.error("Error fetching attendance data:", error);
+      alert("Failed to fetch attendance data for the given register number.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handlePreview = () => {
+    if (attendanceReport.length === 0) {
+      alert("No attendance data to preview. Please search first.");
+      return;
+    }
+    setPreviewData(attendanceReport);
+  };
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
       <Header />
-      <main className="flex-grow p-6">
+      <main className="flex-grow p-4">
         <div className="max-w-7xl mx-auto">
-          {/* Dashboard Header */}
           <div className="flex justify-between items-center mb-8">
-            <h1 className="text-4xl font-bold text-gray-800">
-              Admin Dashboard
-            </h1>
+            <h1 className="text-4xl font-bold text-gray-800">Admin Dashboard</h1>
             <button
-              onClick={() => logout()}
-              className={`${filterButtonStyle} bg-red-500 hover:bg-red-600`}
+              onClick={handleLogout}
+              className="px-6 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-all"
             >
               Logout
             </button>
           </div>
 
-          {/* Navigation Tabs */}
-          <div className="flex space-x-4 mb-8">
-            {["attendance", "reports", "settings"].map((tab) => (
+          <div className="flex justify-center space-x-4 mb-6">
+            {['attendance', 'reports'].map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                className={`${tabButtonStyle} ${
+                className={`px-6 py-3 rounded-lg font-medium transition-all shadow-md hover:shadow-lg focus:outline-none focus:ring-2 ${
                   activeTab === tab
-                    ? "bg-cyan-600 text-white shadow-lg"
+                    ? "bg-cyan-600 text-white"
                     : "bg-white text-gray-600 hover:bg-gray-100"
                 }`}
               >
@@ -98,115 +107,64 @@ const AdminDashboard = () => {
             ))}
           </div>
 
-          {/* Tab Content */}
           {activeTab === "attendance" && (
             <div>
               <button
-                className="flex items-center gap-2 px-4 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 transition-colors shadow-md hover:shadow-lg"
+                className="flex items-center gap-2 m-2 px-4 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 transition-colors shadow-md hover:shadow-lg"
                 onClick={fetchAttendanceData}
               >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-5 w-5 animate-spin"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                  />
-                </svg>
-                Refresh Data
+                {loading ? (
+                  <span className="animate-spin h-5 w-5">&#9696;</span>
+                ) : (
+                  "Refresh Data"
+                )}
               </button>
 
-              {/* Attendance Stats */}
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-                {[
-                  {
-                    title: "Total Students",
-                    value: totalStudents,
-                    color: "bg-blue-500",
-                  },
-                  {
-                    title: "Present Today",
-                    value: presentCount,
-                    color: "bg-green-500",
-                  },
-                  {
-                    title: "Absent Today",
-                    value: absentCount,
-                    color: "bg-red-500",
-                  },
-                ].map((stat, index) => (
-                  <div
-                    key={index}
-                    className="bg-white rounded-xl shadow-md p-6 border-t-4 border-b-4 hover:shadow-lg transition-shadow"
-                  >
-                    <h3 className="text-gray-500 text-sm font-medium">
-                      {stat.title}
-                    </h3>
-                    <p
-                      className={`text-2xl font-bold mt-2 ${stat.color.replace(
-                        "bg-",
-                        "text-"
-                      )}`}
-                    >
-                      {stat.value}
-                    </p>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-4">
+                {[{
+                  title: "Total Students",
+                  value: totalStudents,
+                  color: "bg-blue-500"
+                }, {
+                  title: "Present Today",
+                  value: presentCount,
+                  color: "bg-green-500"
+                }, {
+                  title: "Leave Today",
+                  value: leaveCount,
+                  color: "bg-red-500"
+                }].map((stat, index) => (
+                  <div key={index} className={`rounded-xl shadow-md p-6 ${stat.color} text-white`}>
+                    <h3 className="text-sm font-medium">{stat.title}</h3>
+                    <p className="text-2xl font-bold mt-2">{stat.value}</p>
                   </div>
                 ))}
               </div>
 
-              {/* Attendance Table */}
-              <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-                <div className="p-6 border-b">
+              <div className="bg-white rounded-xl shadow-lg mt-6">
+                <div className="p-4 border-b">
                   <h2 className="text-xl font-semibold">Attendance Records</h2>
                 </div>
                 <div className="overflow-x-auto">
                   <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-50">
                       <tr>
-                        {["Name", "Reg No", "Department", "Date", "Status"].map(
-                          (header) => (
-                            <th
-                              key={header}
-                              className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                            >
-                              {header}
-                            </th>
-                          )
-                        )}
+                        {["Name", "Reg No", "Department", "Date", "Status"].map((header) => (
+                          <th key={header} className="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase">
+                            {header}
+                          </th>
+                        ))}
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
                       {attendanceData.map((item) => (
-                        <tr
-                          key={item._id}
-                          className="hover:bg-gray-50 transition-colors"
-                        >
-                          <td className="px-6 py-4 whitespace-nowrap font-medium">
-                            {item.userId}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            {item._id}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            {item.department}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            {item.dateOnly}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <span
-                              className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                                item.attendanceStatus === "present"
-                                  ? "bg-green-100 text-green-800"
-                                  : "bg-red-100 text-red-800"
-                              }`}
-                            >
+                        <tr key={item._id} className="hover:bg-gray-50">
+                          <td className="px-3 py-2">{item.name}</td>
+                          <td className="px-3 py-2">{item.registrationNumber}</td>
+                          <td className="px-3 py-2">{item.department}</td>
+                          <td className="px-3 py-2">{item.dateOnly}</td>
+                          <td className="px-3 py-2">
+                            <span className={`px-3 py-1 text-sm font-semibold rounded-full ${item.attendanceStatus === "present" ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}>
                               {item.attendanceStatus}
                             </span>
                           </td>
@@ -220,20 +178,47 @@ const AdminDashboard = () => {
           )}
 
           {activeTab === "reports" && (
-            <div>
-              {/* Report Generation */}
-              <h2 className="text-2xl font-semibold mb-4">Generate Reports</h2>
-              <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
-                {/* Report generation form here */}
-              </div>
-            </div>
-          )}
+            <div className="bg-white rounded-xl p-6">
+              <h2 className="text-2xl font-bold mb-6">Generate Reports</h2>
+              <div className="flex flex-col lg:flex-row gap-8">
+                <div className="flex-1">
+                  <label className="block text-gray-700 font-medium mb-2">Search by Register Number</label>
+                  <div className="flex gap-4">
+                    <input
+                      type="text"
+                      value={registerNumber}
+                      onChange={(e) => setRegisterNumber(e.target.value)}
+                      placeholder="Enter Register Number"
+                      className="flex-1 p-2 border rounded-lg focus:ring-cyan-500"
+                    />
+                    <button
+                      onClick={handleSearch}
+                      className="bg-cyan-600 text-white px-4 py-2 rounded-lg hover:bg-cyan-700"
+                    >
+                      Search
+                    </button>
+                  </div>
+                  <button
+                    onClick={handlePreview}
+                    className="mt-4 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300"
+                  >
+                    Preview Report
+                  </button>
+                </div>
 
-          {activeTab === "settings" && (
-            <div>
-              {/* Settings Section */}
-              <h2 className="text-2xl font-semibold mb-4">Settings</h2>
-              {/* Add your settings options here */}
+                {previewData.length > 0 && (
+                  <div className="flex-1 bg-gray-50 p-4 rounded-lg">
+                    <h3 className="text-xl font-bold mb-4">Preview Data</h3>
+                    <ul className="space-y-2">
+                      {previewData.map((item, index) => (
+                        <li key={index} className="p-2 bg-white rounded shadow-md">
+                          {`${item.name} (${item.registrationNumber}) - ${item.attendanceStatus}`}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
             </div>
           )}
         </div>

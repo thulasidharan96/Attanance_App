@@ -14,6 +14,10 @@ export const storeRegisterNumber = (RegisterNumber) => {
     localStorage.setItem('RegisterNumber', RegisterNumber);
 };
 
+export const storeDepartment = (department) => {
+    localStorage.setItem('department', department);
+};
+
 export const getUserName = () => {
     return localStorage.getItem('name');
 };

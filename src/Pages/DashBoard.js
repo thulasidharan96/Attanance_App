@@ -16,23 +16,28 @@ const getDistance = (lat1, lon1, lat2, lon2) => {
   const a =
     Math.sin(dLat / 2) * Math.sin(dLat / 2) +
     Math.cos((lat1 * Math.PI) / 180) *
-    Math.cos((lat2 * Math.PI) / 180) *
-    Math.sin(dLon / 2) *
-    Math.sin(dLon / 2);
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   return R * c * 1000;
 };
 
 const Notification = ({ message, type }) => (
-  <div className={`fixed top-4 left-1/2 transform -translate-x-1/2 px-6 py-3 rounded-lg shadow-lg z-50 ${
-    type === 'success' ? 'bg-green-500' : 'bg-red-500'
-  } text-white`}>
+  <div
+    className={`fixed top-4 left-1/2 transform -translate-x-1/2 px-6 py-3 rounded-lg shadow-lg z-50 ${
+      type === "success" ? "bg-green-500" : "bg-red-500"
+    } text-white`}
+  >
     {message}
   </div>
 );
 
 const UserTable = ({ users = [] }) => (
-  <div className="overflow-y-auto shadow-xl rounded-lg bg-white p-2" style={{ maxHeight: "400px" }}>
+  <div
+    className="overflow-y-auto shadow-xl rounded-lg bg-white p-2"
+    style={{ maxHeight: "400px" }}
+  >
     <table className="min-w-full table-auto border-collapse">
       <thead className="bg-gradient-to-r from-indigo-600 to-blue-500 text-white sticky top-0">
         <tr>
@@ -43,14 +48,23 @@ const UserTable = ({ users = [] }) => (
       <tbody>
         {users.length > 0 ? (
           users.map((user) => (
-            <tr key={user.id} className="hover:bg-gray-100 transition duration-200">
+            <tr
+              key={user.id}
+              className="hover:bg-gray-100 transition duration-200"
+            >
               <td className="border px-4 py-3 font-bold">{user.dateOnly}</td>
               <td className="border px-4 py-3">
-                <span className={`font-bold ${
-                  user.attendanceStatus === "present" ? "text-green-600" :
-                  user.attendanceStatus === "late" ? "text-yellow-500" :
-                  user.attendanceStatus === "Absent" ? "text-red-600" : "text-gray-600"
-                }`}>
+                <span
+                  className={`font-bold ${
+                    user.attendanceStatus === "present"
+                      ? "text-green-600"
+                      : user.attendanceStatus === "late"
+                      ? "text-yellow-500"
+                      : user.attendanceStatus === "leave"
+                      ? "text-red-600"
+                      : "text-gray-600"
+                  }`}
+                >
                   {user.attendanceStatus}
                 </span>
               </td>
@@ -77,7 +91,9 @@ const DashBoard = () => {
   const navigate = useNavigate();
   const userId = localStorage.getItem("userId");
   const [userName] = useState(localStorage.getItem("name") || "");
-  const [registerNumber] = useState(localStorage.getItem("RegisterNumber") || "");
+  const [registerNumber] = useState(
+    localStorage.getItem("RegisterNumber") || ""
+  );
 
   const showNotification = (message, type) => {
     setNotification({ message, type });
@@ -104,13 +120,14 @@ const DashBoard = () => {
   const handleClick = async () => {
     setProcessing(true);
     try {
-      // Pass an empty object as data since AttendanceApi expects a data parameter
-      const response = await AttendanceApi({});
+      const attendanceStatus = isWithinLocation ? 'present' : 'leave';
+      const response = await AttendanceApi({ attendanceStatus });
       
-      // The response structure matches what AttendanceApi returns
       if (response) {
-        showNotification("Attendance marked successfully!", "success");
-        // Ensure fetchUsers is called after successful attendance
+        const statusMessage = isWithinLocation 
+          ? "Present marked successfully!" 
+          : "Absent marked successfully!";
+        showNotification(statusMessage, "success");
         await fetchUsers();
       }
     } catch (error) {
@@ -158,7 +175,9 @@ const DashBoard = () => {
         <section className="flex-grow flex justify-center items-center p-4">
           <div className="container mx-auto max-w-4xl">
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-3xl font-semibold text-indigo-700">Dashboard</h2>
+              <h2 className="text-3xl font-semibold text-indigo-700">
+                Dashboard
+              </h2>
               <button
                 onClick={handleLogout}
                 className="px-4 py-2 bg-red-600 text-white rounded-lg shadow-lg hover:bg-red-700 transition-all"
@@ -171,7 +190,9 @@ const DashBoard = () => {
               <div className="grid grid-cols-2 gap-4">
                 <div className="font-semibold text-gray-700">Name:</div>
                 <div className="text-gray-800">{userName}</div>
-                <div className="font-semibold text-gray-700">Register Number:</div>
+                <div className="font-semibold text-gray-700">
+                  Register Number:
+                </div>
                 <div className="text-gray-800">{registerNumber}</div>
               </div>
             </div>
@@ -188,15 +209,23 @@ const DashBoard = () => {
                   onClick={handleClick}
                   disabled={processing}
                   className={`px-4 py-3 text-white rounded-lg shadow-lg transition-colors ${
-                    processing ? 'bg-gray-500' : 'bg-green-600 hover:bg-green-700'
+                    processing
+                      ? "bg-gray-500"
+                      : "bg-green-600 hover:bg-green-700"
                   }`}
                 >
                   {processing ? "Processing..." : "Take Attendance"}
                 </button>
               ) : (
-                <p className="text-red-600 font-semibold">
-                  You must be within the designated location to mark attendance.
-                </p>
+                <button
+                  onClick={handleClick}
+                  disabled={processing}
+                  className={`px-4 py-3 text-white rounded-lg shadow-lg transition-colors ${
+                    processing ? "bg-red-500" : "bg-red-600 hover:bg-red-700"
+                  }`}
+                >
+                  {processing ? "Processing..." : "Take Attendance"}
+                </button>
               )}
 
               <button

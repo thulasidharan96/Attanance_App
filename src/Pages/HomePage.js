@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { LoginApi } from '../service/Api';
-import { storeUserData, storeUserId, storeUserName, storeRegisterNumber } from '../service/Storage'; 
+import { storeUserData, storeUserId, storeUserName, storeRegisterNumber, storeDepartment } from '../service/Storage'; 
 import { Link, Navigate } from 'react-router-dom';
 import { isAuthenticated } from '../service/Auth';
 import Header from '../component/Header';
@@ -51,6 +51,8 @@ export default function HomePage() {
             storeUserId(response.data.userId);
             storeUserName(response.data.name);
             storeRegisterNumber(response.data.RegisterNumber);
+            storeDepartment(response.data.department);
+
             //console.log(response.data.name);
             //console.log(response.data.RegisterNumber)
             //console.log(getRegisterNumber());
