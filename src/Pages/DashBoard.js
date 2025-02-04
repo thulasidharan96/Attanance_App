@@ -24,7 +24,7 @@ const getDistance = (lat1, lon1, lat2, lon2) => {
 };
 
 const Notification = ({ message, type }) => (
-  <div className={`fixed top-4 right-4 px-6 py-3 rounded-lg shadow-lg z-50 ${
+  <div className={`fixed top-4 left-1/2 transform -translate-x-1/2 px-6 py-3 rounded-lg shadow-lg z-50 ${
     type === 'success' ? 'bg-green-500' : 'bg-red-500'
   } text-white`}>
     {message}
@@ -104,10 +104,14 @@ const DashBoard = () => {
   const handleClick = async () => {
     setProcessing(true);
     try {
-      const response = await AttendanceApi();
-      if (response.status === 201) {
+      // Pass an empty object as data since AttendanceApi expects a data parameter
+      const response = await AttendanceApi({});
+      
+      // The response structure matches what AttendanceApi returns
+      if (response) {
         showNotification("Attendance marked successfully!", "success");
-        fetchUsers();
+        // Ensure fetchUsers is called after successful attendance
+        await fetchUsers();
       }
     } catch (error) {
       showNotification("Failed to mark attendance", "error");
@@ -116,6 +120,7 @@ const DashBoard = () => {
       setProcessing(false);
     }
   };
+  
 
   useEffect(() => {
     if (navigator.geolocation) {

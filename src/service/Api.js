@@ -59,7 +59,6 @@ export const AttendanceApi = async (data) => {
   }
 };
 
-
 // All Student Attendance API
 export const CurrentAttendanceByDate = async () => {
   const token = localStorage.getItem('authToken');
