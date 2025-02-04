@@ -4,6 +4,17 @@ import { isAuthenticated, logout } from "../service/Auth";
 import Header from "../component/Header";
 import Footer from "../component/Footer";
 import { CurrentAttendanceByDate, studentbyRegisterNo } from "../service/Api";
+import {
+  ArrowPathIcon,
+  ChartBarIcon,
+  DocumentMagnifyingGlassIcon,
+  TableCellsIcon,
+  UserCircleIcon,
+  UsersIcon,
+  CheckCircleIcon,
+  XCircleIcon,
+  ArrowDownTrayIcon,
+} from "@heroicons/react/24/outline";
 
 const AdminDashboard = () => {
   const [attendanceData, setAttendanceData] = useState([]);
@@ -12,6 +23,7 @@ const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState("attendance");
   const [previewData, setPreviewData] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [searchPerformed, setSearchPerformed] = useState(false);
 
   const handleLogout = () => logout();
 
@@ -60,6 +72,7 @@ const AdminDashboard = () => {
       setLoading(true);
       const response = await studentbyRegisterNo(registerNumber);
       setAttendanceReport(response.data.records || []);
+      setSearchPerformed(true);
     } catch (error) {
       console.error("Error fetching attendance data:", error);
       alert("Failed to fetch attendance data for the given register number.");
@@ -76,95 +89,183 @@ const AdminDashboard = () => {
     setPreviewData(attendanceReport);
   };
 
+  const handleGenerateReport = () => {
+    const csvData = previewData
+      .map(
+        (item) =>
+          `${item.name},${item.registrationNumber},${item.attendanceStatus}`
+      )
+      .join("\n");
+    const blob = new Blob([`Name,Register Number,Status\n${csvData}`], {
+      type: "text/csv",
+    });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "attendance_report.csv";
+    link.click();
+  };
+
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50">
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-gray-100">
       <Header />
-      <main className="flex-grow p-4">
+      <main className="flex-grow p-6">
         <div className="max-w-7xl mx-auto">
-          <div className="flex justify-between items-center mb-8">
-            <h1 className="text-4xl font-bold text-gray-800">Admin Dashboard</h1>
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+            <div>
+              <h1 className="text-3xl md:text-4xl font-bold text-gray-800 flex items-center gap-2">
+                <UserCircleIcon className="w-8 h-8 text-cyan-600" />
+                Admin Dashboard
+              </h1>
+              <p className="text-gray-600 mt-1">
+                {activeTab === "attendance"
+                  ? "Today's Attendance Overview"
+                  : "Student Reports Management"}
+              </p>
+            </div>
             <button
               onClick={handleLogout}
-              className="px-6 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-all"
+              className="flex items-center gap-2 px-6 py-2 bg-red-500/90 hover:bg-red-600 text-white rounded-xl transition-all shadow-md hover:shadow-lg"
             >
-              Logout
+              <span>Logout</span>
+              <ArrowPathIcon className="w-4 h-4 transform rotate-180" />
             </button>
           </div>
 
-          <div className="flex justify-center space-x-4 mb-6">
-            {['attendance', 'reports'].map((tab) => (
-              <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
-                className={`px-6 py-3 rounded-lg font-medium transition-all shadow-md hover:shadow-lg focus:outline-none focus:ring-2 ${
-                  activeTab === tab
-                    ? "bg-cyan-600 text-white"
-                    : "bg-white text-gray-600 hover:bg-gray-100"
-                }`}
-              >
-                {tab.charAt(0).toUpperCase() + tab.slice(1)}
-              </button>
-            ))}
+          <div className="flex justify-center space-x-4 mb-8">
+            {[
+              { id: "attendance", icon: TableCellsIcon },
+              { id: "reports", icon: DocumentMagnifyingGlassIcon },
+            ].map((tab) => {
+              const Icon = tab.icon;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`flex items-center gap-2 px-6 py-3 rounded-xl font-medium shadow-md transition-all ${
+                    activeTab === tab.id
+                      ? "bg-cyan-600 text-white"
+                      : "bg-white text-gray-600 hover:bg-gray-50"
+                  }`}
+                >
+                  <Icon className="w-5 h-5" />
+                  {tab.id.charAt(0).toUpperCase() + tab.id.slice(1)}
+                </button>
+              );
+            })}
           </div>
 
           {activeTab === "attendance" && (
-            <div>
-              <button
-                className="flex items-center gap-2 m-2 px-4 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 transition-colors shadow-md hover:shadow-lg"
-                onClick={fetchAttendanceData}
-              >
-                {loading ? (
-                  <span className="animate-spin h-5 w-5">&#9696;</span>
-                ) : (
-                  "Refresh Data"
-                )}
-              </button>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-4">
-                {[{
-                  title: "Total Students",
-                  value: totalStudents,
-                  color: "bg-blue-500"
-                }, {
-                  title: "Present Today",
-                  value: presentCount,
-                  color: "bg-green-500"
-                }, {
-                  title: "Leave Today",
-                  value: leaveCount,
-                  color: "bg-red-500"
-                }].map((stat, index) => (
-                  <div key={index} className={`rounded-xl shadow-md p-6 ${stat.color} text-white`}>
-                    <h3 className="text-sm font-medium">{stat.title}</h3>
-                    <p className="text-2xl font-bold mt-2">{stat.value}</p>
-                  </div>
-                ))}
+            <div className="space-y-6">
+              <div className="flex justify-between items-center">
+                <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
+                  <ChartBarIcon className="w-6 h-6" />
+                  Attendance Overview
+                </h2>
+                <button
+                  onClick={fetchAttendanceData}
+                  className="flex items-center gap-2 px-4 py-2 bg-cyan-600/90 hover:bg-cyan-700 text-white rounded-xl shadow-md hover:shadow-lg"
+                  disabled={loading}
+                >
+                  {loading ? (
+                    <ArrowPathIcon className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <ArrowPathIcon className="w-4 h-4" />
+                  )}
+                  Refresh Data
+                </button>
               </div>
 
-              <div className="bg-white rounded-xl shadow-lg mt-6">
-                <div className="p-4 border-b">
-                  <h2 className="text-xl font-semibold">Attendance Records</h2>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {[
+                  {
+                    title: "Total Students",
+                    value: totalStudents,
+                    icon: UsersIcon,
+                    color: "bg-blue-500",
+                  },
+                  {
+                    title: "Present Today",
+                    value: presentCount,
+                    icon: CheckCircleIcon,
+                    color: "bg-green-500",
+                  },
+                  {
+                    title: "Leave Today",
+                    value: leaveCount,
+                    icon: XCircleIcon,
+                    color: "bg-red-500",
+                  },
+                ].map((stat, index) => {
+                  const Icon = stat.icon;
+                  return (
+                    <div
+                      key={index}
+                      className={`rounded-2xl p-6 ${stat.color} text-white shadow-lg hover:shadow-xl transition-shadow`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm font-medium">{stat.title}</p>
+                          <p className="text-3xl font-bold mt-2">
+                            {stat.value}
+                          </p>
+                        </div>
+                        <Icon className="w-12 h-12 opacity-20" />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
+                <div className="p-6 border-b border-gray-200">
+                  <h3 className="text-xl font-semibold flex items-center gap-2">
+                    <TableCellsIcon className="w-5 h-5" />
+                    Detailed Attendance Records
+                  </h3>
                 </div>
                 <div className="overflow-x-auto">
                   <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-50">
                       <tr>
-                        {["Name", "Reg No", "Department", "Date", "Status"].map((header) => (
-                          <th key={header} className="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase">
-                            {header}
-                          </th>
-                        ))}
+                        {["Name", "Reg No", "Department", "Date", "Status"].map(
+                          (header) => (
+                            <th
+                              key={header}
+                              className="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider"
+                            >
+                              {header}
+                            </th>
+                          )
+                        )}
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
                       {attendanceData.map((item) => (
-                        <tr key={item._id} className="hover:bg-gray-50">
-                          <td className="px-3 py-2">{item.name}</td>
-                          <td className="px-3 py-2">{item.registrationNumber}</td>
-                          <td className="px-3 py-2">{item.department}</td>
-                          <td className="px-3 py-2">{item.dateOnly}</td>
-                          <td className="px-3 py-2">
-                            <span className={`px-3 py-1 text-sm font-semibold rounded-full ${item.attendanceStatus === "present" ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}>
+                        <tr
+                          key={item._id}
+                          className="hover:bg-gray-50 transition-colors"
+                        >
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            {item.name}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            {item.registrationNumber}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            {item.department}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            {item.dateOnly}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span
+                              className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
+                                item.attendanceStatus === "present"
+                                  ? "bg-green-100 text-green-800"
+                                  : "bg-red-100 text-red-800"
+                              }`}
+                            >
                               {item.attendanceStatus}
                             </span>
                           </td>
@@ -178,47 +279,119 @@ const AdminDashboard = () => {
           )}
 
           {activeTab === "reports" && (
-            <div className="bg-white rounded-xl p-6">
-              <h2 className="text-2xl font-bold mb-6">Generate Reports</h2>
-              <div className="flex flex-col lg:flex-row gap-8">
-                <div className="flex-1">
-                  <label className="block text-gray-700 font-medium mb-2">Search by Register Number</label>
-                  <div className="flex gap-4">
-                    <input
-                      type="text"
-                      value={registerNumber}
-                      onChange={(e) => setRegisterNumber(e.target.value)}
-                      placeholder="Enter Register Number"
-                      className="flex-1 p-2 border rounded-lg focus:ring-cyan-500"
-                    />
+            <div className="space-y-8">
+              <div className="bg-white rounded-2xl shadow-lg p-6">
+                <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
+                  <DocumentMagnifyingGlassIcon className="w-6 h-6" />
+                  Student Attendance Report
+                </h2>
+                <div className="space-y-6">
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium text-gray-700">
+                      Search by Register Number
+                    </label>
+                    <div className="flex flex-col md:flex-row gap-4">
+                      <input
+                        type="text"
+                        value={registerNumber}
+                        onChange={(e) => setRegisterNumber(e.target.value)}
+                        placeholder="Enter Register Number"
+                        className="flex-1 px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
+                      />
+                      <button
+                        onClick={handleSearch}
+                        className="flex items-center gap-2 px-6 py-2 bg-cyan-600 hover:bg-cyan-700 text-white rounded-xl transition-colors shadow-md hover:shadow-lg"
+                        disabled={loading}
+                      >
+                        {loading ? (
+                          <ArrowPathIcon className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <>
+                            <DocumentMagnifyingGlassIcon className="w-4 h-4" />
+                            Search
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+
+                  {searchPerformed && (
+                    <div className="border-t border-gray-200 pt-6">
+                      <button
+                        onClick={handlePreview}
+                        className="flex items-center gap-2 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-xl shadow-md hover:shadow-lg"
+                      >
+                        <TableCellsIcon className="w-4 h-4" />
+                        Preview Report
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {previewData.length > 0 && (
+                <div className="bg-white rounded-2xl shadow-lg p-6">
+                  <div className="flex justify-between items-center mb-6">
+                    <h3 className="text-xl font-semibold flex items-center gap-2">
+                      <TableCellsIcon className="w-5 h-5" />
+                      Preview Report Data
+                    </h3>
                     <button
-                      onClick={handleSearch}
-                      className="bg-cyan-600 text-white px-4 py-2 rounded-lg hover:bg-cyan-700"
+                      onClick={handleGenerateReport}
+                      className="flex items-center gap-2 px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-xl shadow-md hover:shadow-lg"
                     >
-                      Search
+                      <ArrowDownTrayIcon className="w-4 h-4" />
+                      Download CSV
                     </button>
                   </div>
-                  <button
-                    onClick={handlePreview}
-                    className="mt-4 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300"
-                  >
-                    Preview Report
-                  </button>
-                </div>
-
-                {previewData.length > 0 && (
-                  <div className="flex-1 bg-gray-50 p-4 rounded-lg">
-                    <h3 className="text-xl font-bold mb-4">Preview Data</h3>
-                    <ul className="space-y-2">
-                      {previewData.map((item, index) => (
-                        <li key={index} className="p-2 bg-white rounded shadow-md">
-                          {`${item.name} (${item.registrationNumber}) - ${item.attendanceStatus}`}
-                        </li>
-                      ))}
-                    </ul>
+                  <div className="overflow-x-auto rounded-lg border border-gray-200">
+                    <table className="min-w-full divide-y divide-gray-200">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="px-4 py-3 text-left text-sm font-medium text-gray-500 uppercase">
+                            Date
+                          </th>
+                          <th className="px-4 py-3 text-left text-sm font-medium text-gray-500 uppercase">
+                            Name
+                          </th>
+                          <th className="px-4 py-3 text-left text-sm font-medium text-gray-500 uppercase">
+                            Reg No
+                          </th>
+                          <th className="px-4 py-3 text-left text-sm font-medium text-gray-500 uppercase">
+                            Status
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-200">
+                        {previewData.map((item, index) => (
+                          <tr key={index} className="hover:bg-gray-50">
+                            <td className="px-4 py-3 whitespace-nowrap">
+                              {item.dateOnly}
+                            </td>
+                            <td className="px-4 py-3 whitespace-nowrap">
+                              {item.name}
+                            </td>
+                            <td className="px-4 py-3 whitespace-nowrap">
+                              {item.registrationNumber}
+                            </td>
+                            <td className="px-4 py-3 whitespace-nowrap">
+                              <span
+                                className={`px-2 py-1 text-sm rounded-full ${
+                                  item.attendanceStatus === "present"
+                                    ? "bg-green-100 text-green-800"
+                                    : "bg-red-100 text-red-800"
+                                }`}
+                              >
+                                {item.attendanceStatus}
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
                   </div>
-                )}
-              </div>
+                </div>
+              )}
             </div>
           )}
         </div>
