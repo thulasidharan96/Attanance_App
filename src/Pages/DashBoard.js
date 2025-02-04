@@ -4,6 +4,15 @@ import { isAuthenticated, logout } from "../service/Auth";
 import Header from "../component/Header";
 import Footer from "../component/Footer";
 import { AttendanceApi, UserApi } from "../service/Api";
+import {
+  ArrowPathIcon,
+  UserCircleIcon,
+  TableCellsIcon,
+  MapPinIcon,
+  ClockIcon,
+  CheckCircleIcon,
+  XCircleIcon
+} from "@heroicons/react/24/outline";
 
 const COMPANY_LAT = 8.79288;
 const COMPANY_LON = 78.12069;
@@ -25,60 +34,11 @@ const getDistance = (lat1, lon1, lat2, lon2) => {
 
 const Notification = ({ message, type }) => (
   <div
-    className={`fixed top-4 left-1/2 transform -translate-x-1/2 px-6 py-3 rounded-lg shadow-lg z-50 ${
+    className={`fixed top-4 left-1/2 transform -translate-x-1/2 px-8 py-4 rounded-xl shadow-2xl z-50 ${
       type === "success" ? "bg-green-500" : "bg-red-500"
-    } text-white`}
+    } text-white text-lg font-medium animate-fade-in`}
   >
     {message}
-  </div>
-);
-
-const UserTable = ({ users = [] }) => (
-  <div
-    className="overflow-y-auto shadow-xl rounded-lg bg-white p-2"
-    style={{ maxHeight: "400px" }}
-  >
-    <table className="min-w-full table-auto border-collapse">
-      <thead className="bg-gradient-to-r from-indigo-600 to-blue-500 text-white sticky top-0">
-        <tr>
-          <th className="border px-6 py-3 text-left">Date</th>
-          <th className="border px-6 py-3 text-left">Attendance Status</th>
-        </tr>
-      </thead>
-      <tbody>
-        {users.length > 0 ? (
-          users.map((user) => (
-            <tr
-              key={user.id}
-              className="hover:bg-gray-100 transition duration-200"
-            >
-              <td className="border px-4 py-3 font-bold">{user.dateOnly}</td>
-              <td className="border px-4 py-3">
-                <span
-                  className={`font-bold ${
-                    user.attendanceStatus === "present"
-                      ? "text-green-600"
-                      : user.attendanceStatus === "late"
-                      ? "text-yellow-500"
-                      : user.attendanceStatus === "leave"
-                      ? "text-red-600"
-                      : "text-gray-600"
-                  }`}
-                >
-                  {user.attendanceStatus}
-                </span>
-              </td>
-            </tr>
-          ))
-        ) : (
-          <tr>
-            <td colSpan="2" className="text-center py-4 text-gray-600">
-              No attendance data available.
-            </td>
-          </tr>
-        )}
-      </tbody>
-    </table>
   </div>
 );
 
@@ -91,9 +51,7 @@ const DashBoard = () => {
   const navigate = useNavigate();
   const userId = localStorage.getItem("userId");
   const [userName] = useState(localStorage.getItem("name") || "");
-  const [registerNumber] = useState(
-    localStorage.getItem("RegisterNumber") || ""
-  );
+  const [registerNumber] = useState(localStorage.getItem("RegisterNumber") || "");
 
   const showNotification = (message, type) => {
     setNotification({ message, type });
@@ -124,8 +82,8 @@ const DashBoard = () => {
       const response = await AttendanceApi({ attendanceStatus });
       
       if (response) {
-        const statusMessage = isWithinLocation 
-          ? "Present marked successfully!" 
+        const statusMessage = isWithinLocation
+          ? "Present marked successfully!"
           : "Absent marked successfully!";
         showNotification(statusMessage, "success");
         await fetchUsers();
@@ -137,7 +95,6 @@ const DashBoard = () => {
       setProcessing(false);
     }
   };
-  
 
   useEffect(() => {
     if (navigator.geolocation) {
@@ -168,76 +125,155 @@ const DashBoard = () => {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-400">
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-gray-100">
       {notification && <Notification {...notification} />}
       <Header />
-      <main className="flex-grow flex flex-col">
-        <section className="flex-grow flex justify-center items-center p-4">
-          <div className="container mx-auto max-w-4xl">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-3xl font-semibold text-indigo-700">
-                Dashboard
-              </h2>
-              <button
-                onClick={handleLogout}
-                className="px-4 py-2 bg-red-600 text-white rounded-lg shadow-lg hover:bg-red-700 transition-all"
-              >
-                Logout
-              </button>
+      <main className="flex-grow p-6">
+        <div className="max-w-7xl mx-auto">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+            <div>
+              <h1 className="text-3xl md:text-4xl font-bold text-gray-800 flex items-center gap-2">
+                <UserCircleIcon className="w-8 h-8 text-cyan-600" />
+                Student Dashboard
+              </h1>
+              <p className="text-gray-600 mt-1">
+                Manage your attendance and view history
+              </p>
             </div>
+            <button
+              onClick={handleLogout}
+              className="flex items-center gap-2 px-6 py-2 bg-red-500/90 hover:bg-red-600 text-white rounded-xl transition-all shadow-md hover:shadow-lg"
+            >
+              <span>Logout</span>
+              <ArrowPathIcon className="w-4 h-4 transform rotate-180" />
+            </button>
+          </div>
 
-            <div className="bg-white p-4 mb-4 rounded-lg shadow-md">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="font-semibold text-gray-700">Name:</div>
-                <div className="text-gray-800">{userName}</div>
-                <div className="font-semibold text-gray-700">
-                  Register Number:
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            <div className="bg-white rounded-2xl shadow-lg p-6">
+              <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+                <UserCircleIcon className="w-6 h-6 text-cyan-600" />
+                Student Information
+              </h2>
+              <div className="space-y-4">
+                <div className="flex items-center gap-2">
+                  <span className="font-medium text-gray-700">Name:</span>
+                  <span className="text-gray-800">{userName}</span>
                 </div>
-                <div className="text-gray-800">{registerNumber}</div>
+                <div className="flex items-center gap-2">
+                  <span className="font-medium text-gray-700">Register Number:</span>
+                  <span className="text-gray-800">{registerNumber}</span>
+                </div>
               </div>
             </div>
 
-            {loading ? (
-              <div className="text-center py-4">Loading...</div>
-            ) : (
-              <UserTable users={users} />
-            )}
-
-            <div className="flex justify-between mt-6">
-              {isWithinLocation ? (
-                <button
-                  onClick={handleClick}
-                  disabled={processing}
-                  className={`px-4 py-3 text-white rounded-lg shadow-lg transition-colors ${
-                    processing
-                      ? "bg-gray-500"
-                      : "bg-green-600 hover:bg-green-700"
-                  }`}
-                >
-                  {processing ? "Processing..." : "Take Attendance"}
-                </button>
-              ) : (
-                <button
-                  onClick={handleClick}
-                  disabled={processing}
-                  className={`px-4 py-3 text-white rounded-lg shadow-lg transition-colors ${
-                    processing ? "bg-red-500" : "bg-red-600 hover:bg-red-700"
-                  }`}
-                >
-                  {processing ? "Processing..." : "Take Attendance"}
-                </button>
-              )}
-
-              <button
-                onClick={fetchUsers}
-                disabled={loading}
-                className="px-4 py-3 bg-blue-600 text-white rounded-lg shadow-lg hover:bg-blue-700 transition-colors"
-              >
-                {loading ? "Syncing..." : "Sync Data"}
-              </button>
+            <div className="bg-white rounded-2xl shadow-lg p-6">
+              <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+                <MapPinIcon className="w-6 h-6 text-cyan-600" />
+                Location Status
+              </h2>
+              <div className="flex items-center gap-2">
+                <span className={`inline-flex items-center px-4 py-2 rounded-lg ${
+                  isWithinLocation 
+                    ? 'bg-green-100 text-green-800' 
+                    : 'bg-red-100 text-red-800'
+                }`}>
+                  {isWithinLocation ? (
+                    <CheckCircleIcon className="w-5 h-5 mr-2" />
+                  ) : (
+                    <XCircleIcon className="w-5 h-5 mr-2" />
+                  )}
+                  {isWithinLocation ? 'Within Campus Range' : 'Outside Campus Range'}
+                </span>
+              </div>
             </div>
           </div>
-        </section>
+
+          <div className="bg-white rounded-2xl shadow-lg overflow-hidden mb-8">
+            <div className="p-6 border-b border-gray-200">
+              <h2 className="text-xl font-semibold flex items-center gap-2">
+                <ClockIcon className="w-6 h-6 text-cyan-600" />
+                Attendance History
+              </h2>
+            </div>
+            {loading ? (
+              <div className="flex justify-center items-center p-8">
+                <ArrowPathIcon className="w-8 h-8 animate-spin text-cyan-600" />
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {users.length > 0 ? (
+                      users.map((user) => (
+                        <tr key={user.id} className="hover:bg-gray-50">
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                            {user.dateOnly}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
+                              user.attendanceStatus === "present"
+                                ? "bg-green-100 text-green-800"
+                                : user.attendanceStatus === "late"
+                                ? "bg-yellow-100 text-yellow-800"
+                                : "bg-red-100 text-red-800"
+                            }`}>
+                              {user.attendanceStatus}
+                            </span>
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan="2" className="px-6 py-4 text-center text-sm text-gray-500">
+                          No attendance records found
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+
+          <div className="flex flex-col md:flex-row gap-4 justify-between">
+            <button
+              onClick={handleClick}
+              disabled={processing}
+              className={`flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-medium shadow-md transition-all ${
+                isWithinLocation
+                  ? processing
+                    ? "bg-gray-400"
+                    : "bg-green-600 hover:bg-green-700"
+                  : processing
+                    ? "bg-gray-400"
+                    : "bg-red-600 hover:bg-red-700"
+              } text-white`}
+            >
+              {processing ? (
+                <ArrowPathIcon className="w-5 h-5 animate-spin" />
+              ) : (
+                <CheckCircleIcon className="w-5 h-5" />
+              )}
+              {processing ? "Processing..." : "Mark Attendance"}
+            </button>
+
+            <button
+              onClick={fetchUsers}
+              disabled={loading}
+              className="flex items-center justify-center gap-2 px-6 py-3 bg-cyan-600 hover:bg-cyan-700 text-white rounded-xl shadow-md transition-all"
+            >
+              <ArrowPathIcon className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
+              {loading ? "Syncing..." : "Sync Data"}
+            </button>
+          </div>
+        </div>
       </main>
       <Footer />
     </div>

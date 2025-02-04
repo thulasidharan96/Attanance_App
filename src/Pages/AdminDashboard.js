@@ -3,10 +3,14 @@ import { Navigate } from "react-router-dom";
 import { isAuthenticated, logout } from "../service/Auth";
 import Header from "../component/Header";
 import Footer from "../component/Footer";
-import { CurrentAttendanceByDate, studentbyRegisterNo } from "../service/Api";
+import { 
+  CurrentAttendanceByDate, 
+  studentbyRegisterNo,
+  getDepartmentReport,
+  getDateRangeReport 
+} from "../service/Api";
 import {
   ArrowPathIcon,
-  ChartBarIcon,
   DocumentMagnifyingGlassIcon,
   TableCellsIcon,
   UserCircleIcon,
@@ -14,16 +18,28 @@ import {
   CheckCircleIcon,
   XCircleIcon,
   ArrowDownTrayIcon,
+  AcademicCapIcon,
+  ClockIcon,
 } from "@heroicons/react/24/outline";
 
 const AdminDashboard = () => {
   const [attendanceData, setAttendanceData] = useState([]);
-  const [attendanceReport, setAttendanceReport] = useState([]);
   const [registerNumber, setRegisterNumber] = useState("");
   const [activeTab, setActiveTab] = useState("attendance");
+  const [reportTab, setReportTab] = useState("regNo");
+  const [department, setDepartment] = useState("");
+  const [dateRange, setDateRange] = useState({ start: "", end: "" });
   const [previewData, setPreviewData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [searchPerformed, setSearchPerformed] = useState(false);
+
+  useEffect(() => {
+    fetchAttendanceData();
+  }, []);
+
+  if (!isAuthenticated()) {
+    return <Navigate to="/" />;
+  }
 
   const handleLogout = () => logout();
 
@@ -41,14 +57,6 @@ const AdminDashboard = () => {
     }
   };
 
-  useEffect(() => {
-    fetchAttendanceData();
-  }, []);
-
-  if (!isAuthenticated()) {
-    return <Navigate to="/" />;
-  }
-
   const getAttendanceStats = () => {
     let presentCount = 0;
     let leaveCount = 0;
@@ -61,50 +69,127 @@ const AdminDashboard = () => {
     return { totalStudents: attendanceData.length, presentCount, leaveCount };
   };
 
-  const { totalStudents, presentCount, leaveCount } = getAttendanceStats();
-
-  const handleSearch = async () => {
-    if (!registerNumber) {
-      alert("Please enter a register number.");
+  const handleSearch = async (type) => {
+    if (type === 'regNo' && !registerNumber) {
+      alert("Please enter a register number");
       return;
     }
+    if (type === 'department' && !department) {
+      alert("Please select a department");
+      return;
+    }
+    if (type === 'dateRange' && (!dateRange.start || !dateRange.end)) {
+      alert("Please select both start and end dates");
+      return;
+    }
+
+    setLoading(true);
     try {
-      setLoading(true);
-      const response = await studentbyRegisterNo(registerNumber);
-      setAttendanceReport(response.data.records || []);
+      let response;
+      switch (type) {
+        case 'regNo':
+          response = await studentbyRegisterNo(registerNumber);
+          break;
+        case 'department':
+          response = await getDepartmentReport(department);
+          break;
+        case 'dateRange':
+          response = await getDateRangeReport(dateRange.start, dateRange.end);
+          break;
+        default:
+          throw new Error('Invalid search type');
+      }
+      setPreviewData(response.data.records || []);
       setSearchPerformed(true);
     } catch (error) {
-      console.error("Error fetching attendance data:", error);
-      alert("Failed to fetch attendance data for the given register number.");
+      console.error("Error fetching data:", error);
+      alert(`Failed to fetch ${type} data. Please try again.`);
     } finally {
       setLoading(false);
     }
   };
 
-  const handlePreview = () => {
-    if (attendanceReport.length === 0) {
-      alert("No attendance data to preview. Please search first.");
-      return;
-    }
-    setPreviewData(attendanceReport);
-  };
-
-  const handleGenerateReport = () => {
+  const handleGenerateReport = (type) => {
+    if (!previewData.length) return;
+    
+    const filename = `attendance_report_${type}_${new Date().toISOString().split('T')[0]}.csv`;
+    const headers = "Date,Name,Register Number,Department,Status\n";
     const csvData = previewData
-      .map(
-        (item) =>
-          `${item.name},${item.registrationNumber},${item.attendanceStatus}`
+      .map(item => 
+        `${item.dateOnly},${item.name},${item.registrationNumber},${item.department},${item.attendanceStatus}`
       )
       .join("\n");
-    const blob = new Blob([`Name,Register Number,Status\n${csvData}`], {
-      type: "text/csv",
-    });
+    
+    const blob = new Blob([headers + csvData], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = "attendance_report.csv";
+    link.download = filename;
     link.click();
   };
+    const renderPreviewTable = (data) => (
+      <div className="bg-white rounded-2xl shadow-lg p-2 mt-2">
+        <div className="flex justify-between items-center mb-1">
+          <h3 className="text-xl font-semibold">Today Attendance Report</h3>
+          <button
+            onClick={() => {
+              // Direct CSV generation for attendance data
+              const filename = `attendance_report_${new Date().toISOString().split('T')[0]}.csv`;
+              const headers = "Date,Name,Register Number,Department,Status\n";
+              const csvData = data
+                .map(item => 
+                  `${item.dateOnly},${item.name},${item.registrationNumber},${item.department},${item.attendanceStatus}`
+                )
+                .join("\n");
+            
+              const blob = new Blob([headers + csvData], { type: "text/csv" });
+              const url = URL.createObjectURL(blob);
+              const link = document.createElement("a");
+              link.href = url;
+              link.download = filename;
+              link.click();
+            }}
+            className="flex items-center gap-2 px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-xl"
+          >
+            <ArrowDownTrayIcon className="w-4 h-4" />
+            Download CSV
+          </button>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-4 py-3 text-left text-sm font-medium text-gray-500 uppercase">Date</th>
+                <th className="px-4 py-3 text-left text-sm font-medium text-gray-500 uppercase">Name</th>
+                <th className="px-4 py-3 text-left text-sm font-medium text-gray-500 uppercase">Reg No</th>
+                <th className="px-4 py-3 text-left text-sm font-medium text-gray-500 uppercase">Department</th>
+                <th className="px-4 py-3 text-left text-sm font-medium text-gray-500 uppercase">Status</th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {data.map((item, index) => (
+                <tr key={index} className="hover:bg-gray-50">
+                  <td className="px-4 py-3 whitespace-nowrap">{item.dateOnly}</td>
+                  <td className="px-4 py-3 whitespace-nowrap">{item.name}</td>
+                  <td className="px-4 py-3 whitespace-nowrap">{item.registrationNumber}</td>
+                  <td className="px-4 py-3 whitespace-nowrap">{item.department}</td>
+                  <td className="px-4 py-3 whitespace-nowrap">
+                    <span className={`px-2 py-1 text-sm rounded-full ${
+                      item.attendanceStatus === "present"
+                        ? "bg-green-100 text-green-800"
+                        : "bg-red-100 text-red-800"
+                    }`}>
+                      {item.attendanceStatus}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    );
+  const { totalStudents, presentCount, leaveCount } = getAttendanceStats();
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-gray-100">
@@ -118,14 +203,12 @@ const AdminDashboard = () => {
                 Admin Dashboard
               </h1>
               <p className="text-gray-600 mt-1">
-                {activeTab === "attendance"
-                  ? "Today's Attendance Overview"
-                  : "Student Reports Management"}
+                {activeTab === "attendance" ? "Today's Attendance Overview" : "Student Reports Management"}
               </p>
             </div>
             <button
               onClick={handleLogout}
-              className="flex items-center gap-2 px-6 py-2 bg-red-500/90 hover:bg-red-600 text-white rounded-xl transition-all shadow-md hover:shadow-lg"
+              className="flex items-center gap-2 px-6 py-2 bg-red-500/90 hover:bg-red-600 text-white rounded-xl"
             >
               <span>Logout</span>
               <ArrowPathIcon className="w-4 h-4 transform rotate-180" />
@@ -133,49 +216,28 @@ const AdminDashboard = () => {
           </div>
 
           <div className="flex justify-center space-x-4 mb-8">
-            {[
-              { id: "attendance", icon: TableCellsIcon },
-              { id: "reports", icon: DocumentMagnifyingGlassIcon },
-            ].map((tab) => {
-              const Icon = tab.icon;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center gap-2 px-6 py-3 rounded-xl font-medium shadow-md transition-all ${
-                    activeTab === tab.id
-                      ? "bg-cyan-600 text-white"
-                      : "bg-white text-gray-600 hover:bg-gray-50"
-                  }`}
-                >
-                  <Icon className="w-5 h-5" />
-                  {tab.id.charAt(0).toUpperCase() + tab.id.slice(1)}
-                </button>
-              );
-            })}
+            {["attendance", "reports"].map((tab) => (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                className={`flex items-center gap-2 px-6 py-3 rounded-xl font-medium ${
+                  activeTab === tab
+                    ? "bg-cyan-600 text-white"
+                    : "bg-white text-gray-600 hover:bg-gray-50"
+                }`}
+              >
+                {tab === "attendance" ? (
+                  <TableCellsIcon className="w-5 h-5" />
+                ) : (
+                  <DocumentMagnifyingGlassIcon className="w-5 h-5" />
+                )}
+                {tab.charAt(0).toUpperCase() + tab.slice(1)}
+              </button>
+            ))}
           </div>
 
           {activeTab === "attendance" && (
             <div className="space-y-6">
-              <div className="flex justify-between items-center">
-                <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
-                  <ChartBarIcon className="w-6 h-6" />
-                  Attendance Overview
-                </h2>
-                <button
-                  onClick={fetchAttendanceData}
-                  className="flex items-center gap-2 px-4 py-2 bg-cyan-600/90 hover:bg-cyan-700 text-white rounded-xl shadow-md hover:shadow-lg"
-                  disabled={loading}
-                >
-                  {loading ? (
-                    <ArrowPathIcon className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <ArrowPathIcon className="w-4 h-4" />
-                  )}
-                  Refresh Data
-                </button>
-              </div>
-
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {[
                   {
@@ -196,202 +258,138 @@ const AdminDashboard = () => {
                     icon: XCircleIcon,
                     color: "bg-red-500",
                   },
-                ].map((stat, index) => {
-                  const Icon = stat.icon;
-                  return (
-                    <div
-                      key={index}
-                      className={`rounded-2xl p-6 ${stat.color} text-white shadow-lg hover:shadow-xl transition-shadow`}
-                    >
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-sm font-medium">{stat.title}</p>
-                          <p className="text-3xl font-bold mt-2">
-                            {stat.value}
-                          </p>
-                        </div>
-                        <Icon className="w-12 h-12 opacity-20" />
+                ].map((stat, index) => (
+                  <div
+                    key={index}
+                    className={`rounded-2xl p-6 ${stat.color} text-white shadow-lg hover:shadow-xl transition-shadow`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium">{stat.title}</p>
+                        <p className="text-3xl font-bold mt-2">{stat.value}</p>
                       </div>
+                      <stat.icon className="w-12 h-12 opacity-20" />
                     </div>
-                  );
-                })}
+                  </div>
+                ))}
               </div>
 
-              <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
-                <div className="p-6 border-b border-gray-200">
-                  <h3 className="text-xl font-semibold flex items-center gap-2">
-                    <TableCellsIcon className="w-5 h-5" />
-                    Detailed Attendance Records
-                  </h3>
-                </div>
-                <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        {["Name", "Reg No", "Department", "Date", "Status"].map(
-                          (header) => (
-                            <th
-                              key={header}
-                              className="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider"
-                            >
-                              {header}
-                            </th>
-                          )
-                        )}
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                      {attendanceData.map((item) => (
-                        <tr
-                          key={item._id}
-                          className="hover:bg-gray-50 transition-colors"
-                        >
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            {item.name}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            {item.registrationNumber}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            {item.department}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            {item.dateOnly}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <span
-                              className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
-                                item.attendanceStatus === "present"
-                                  ? "bg-green-100 text-green-800"
-                                  : "bg-red-100 text-red-800"
-                              }`}
-                            >
-                              {item.attendanceStatus}
-                            </span>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+              <div className="m-1 border-gray-200 flex justify-between items-center">
+                <button
+                  onClick={fetchAttendanceData}
+                  className="flex items-center gap-2 px-4 py-2 bg-cyan-600 hover:bg-cyan-700 text-white rounded-xl transition-colors duration-200"
+                >
+                  <ArrowPathIcon className="w-4 h-4" />
+                  Refresh Data
+                </button>
               </div>
+              {renderPreviewTable(attendanceData)}
             </div>
           )}
 
           {activeTab === "reports" && (
             <div className="space-y-8">
+              {/* Report Type Tabs */}
+              <div className="flex justify-center space-x-4 mb-8">
+                {[
+                  { id: "regNo", label: "Register Number", icon: UserCircleIcon },
+                  { id: "department", label: "Department", icon: AcademicCapIcon },
+                  { id: "dateRange", label: "Date Range", icon: ClockIcon }
+                ].map((tab) => (
+                  <button
+                    key={tab.id}
+                    onClick={() => setReportTab(tab.id)}
+                    className={`flex items-center gap-2 px-6 py-3 rounded-xl font-medium ${
+                      reportTab === tab.id
+                        ? "bg-cyan-600 text-white"
+                        : "bg-white text-gray-600 hover:bg-gray-50"
+                    }`}
+                  >
+                    <tab.icon className="w-5 h-5" />
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
+
+              {/* Report Content */}
               <div className="bg-white rounded-2xl shadow-lg p-6">
-                <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
-                  <DocumentMagnifyingGlassIcon className="w-6 h-6" />
-                  Student Attendance Report
-                </h2>
-                <div className="space-y-6">
-                  <div className="space-y-2">
-                    <label className="block text-sm font-medium text-gray-700">
-                      Search by Register Number
-                    </label>
-                    <div className="flex flex-col md:flex-row gap-4">
+                {reportTab === "regNo" && (
+                  <div className="space-y-6">
+                    <h2 className="text-2xl font-bold">Register Number Search</h2>
+                    <div className="flex gap-4">
                       <input
                         type="text"
                         value={registerNumber}
                         onChange={(e) => setRegisterNumber(e.target.value)}
                         placeholder="Enter Register Number"
-                        className="flex-1 px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
+                        className="flex-1 px-4 py-2 border rounded-xl"
                       />
                       <button
-                        onClick={handleSearch}
-                        className="flex items-center gap-2 px-6 py-2 bg-cyan-600 hover:bg-cyan-700 text-white rounded-xl transition-colors shadow-md hover:shadow-lg"
+                        onClick={() => handleSearch('regNo')}
+                        className="px-6 py-2 bg-cyan-600 text-white rounded-xl"
                         disabled={loading}
                       >
-                        {loading ? (
-                          <ArrowPathIcon className="w-4 h-4 animate-spin" />
-                        ) : (
-                          <>
-                            <DocumentMagnifyingGlassIcon className="w-4 h-4" />
-                            Search
-                          </>
-                        )}
+                        {loading ? "Searching..." : "Search"}
                       </button>
                     </div>
                   </div>
+                )}
 
-                  {searchPerformed && (
-                    <div className="border-t border-gray-200 pt-6">
-                      <button
-                        onClick={handlePreview}
-                        className="flex items-center gap-2 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-xl shadow-md hover:shadow-lg"
+                {reportTab === "department" && (
+                  <div className="space-y-6">
+                    <h2 className="text-2xl font-bold">Department Search</h2>
+                    <div className="flex gap-4">
+                      <select
+                        value={department}
+                        onChange={(e) => setDepartment(e.target.value)}
+                        className="flex-1 px-4 py-2 border rounded-xl"
                       >
-                        <TableCellsIcon className="w-4 h-4" />
-                        Preview Report
+                        <option value="">Select Department</option>
+                        <option value="CSE">Computer Science</option>
+                        <option value="ECE">Electronics</option>
+                        <option value="MECH">Mechanical</option>
+                        <option value="CIVIL">Civil</option>
+                      </select>
+                      <button
+                        onClick={() => handleSearch('department')}
+                        className="px-6 py-2 bg-cyan-600 text-white rounded-xl"
+                        disabled={loading}
+                      >
+                        {loading ? "Searching..." : "Search"}
                       </button>
                     </div>
-                  )}
-                </div>
-              </div>
+                  </div>
+                )}
 
-              {previewData.length > 0 && (
-                <div className="bg-white rounded-2xl shadow-lg p-6">
-                  <div className="flex justify-between items-center mb-6">
-                    <h3 className="text-xl font-semibold flex items-center gap-2">
-                      <TableCellsIcon className="w-5 h-5" />
-                      Preview Report Data
-                    </h3>
-                    <button
-                      onClick={handleGenerateReport}
-                      className="flex items-center gap-2 px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-xl shadow-md hover:shadow-lg"
-                    >
-                      <ArrowDownTrayIcon className="w-4 h-4" />
-                      Download CSV
-                    </button>
+                {reportTab === "dateRange" && (
+                  <div className="space-y-6">
+                    <h2 className="text-2xl font-bold">Date Range Search</h2>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <input
+                        type="date"
+                        value={dateRange.start}
+                        onChange={(e) => setDateRange({...dateRange, start: e.target.value})}
+                        className="px-4 py-2 border rounded-xl"
+                      />
+                      <input
+                        type="date"
+                        value={dateRange.end}
+                        onChange={(e) => setDateRange({...dateRange, end: e.target.value})}
+                        className="px-4 py-2 border rounded-xl"
+                      />
+                      <button
+                        onClick={() => handleSearch('dateRange')}
+                        className="md:col-span-2 px-6 py-2 bg-cyan-600 text-white rounded-xl"
+                        disabled={loading}
+                      >
+                        {loading ? "Searching..." : "Generate Report"}
+                      </button>
+                    </div>
                   </div>
-                  <div className="overflow-x-auto rounded-lg border border-gray-200">
-                    <table className="min-w-full divide-y divide-gray-200">
-                      <thead className="bg-gray-50">
-                        <tr>
-                          <th className="px-4 py-3 text-left text-sm font-medium text-gray-500 uppercase">
-                            Date
-                          </th>
-                          <th className="px-4 py-3 text-left text-sm font-medium text-gray-500 uppercase">
-                            Name
-                          </th>
-                          <th className="px-4 py-3 text-left text-sm font-medium text-gray-500 uppercase">
-                            Reg No
-                          </th>
-                          <th className="px-4 py-3 text-left text-sm font-medium text-gray-500 uppercase">
-                            Status
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody className="bg-white divide-y divide-gray-200">
-                        {previewData.map((item, index) => (
-                          <tr key={index} className="hover:bg-gray-50">
-                            <td className="px-4 py-3 whitespace-nowrap">
-                              {item.dateOnly}
-                            </td>
-                            <td className="px-4 py-3 whitespace-nowrap">
-                              {item.name}
-                            </td>
-                            <td className="px-4 py-3 whitespace-nowrap">
-                              {item.registrationNumber}
-                            </td>
-                            <td className="px-4 py-3 whitespace-nowrap">
-                              <span
-                                className={`px-2 py-1 text-sm rounded-full ${
-                                  item.attendanceStatus === "present"
-                                    ? "bg-green-100 text-green-800"
-                                    : "bg-red-100 text-red-800"
-                                }`}
-                              >
-                                {item.attendanceStatus}
-                              </span>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              )}
+                )}
+
+                {searchPerformed && previewData.length > 0 && renderPreviewTable(previewData)}
+              </div>
             </div>
           )}
         </div>
@@ -402,3 +400,4 @@ const AdminDashboard = () => {
 };
 
 export default AdminDashboard;
+

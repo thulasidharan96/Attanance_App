@@ -106,3 +106,12 @@ export const studentbyRegisterNo = async (registrationNumber) => {
   });
 };
 
+
+export const getDepartmentReport = async (department) => {
+  console.log("Fetching department report for:", department);
+};
+
+export const getDateRangeReport = async (startDate, endDate) => {
+  console.log("Fetching date range report for:", startDate, "to", endDate);
+};
+  
