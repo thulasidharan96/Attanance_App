@@ -3,11 +3,11 @@ import { Navigate } from "react-router-dom";
 import { isAuthenticated, logout } from "../service/Auth";
 import Header from "../component/Header";
 import Footer from "../component/Footer";
-import { 
-  CurrentAttendanceByDate, 
+import {
+  CurrentAttendanceByDate,
   studentbyRegisterNo,
   getDepartmentReport,
-  getDateRangeReport 
+  allData
 } from "../service/Api";
 import {
   ArrowPathIcon,
@@ -50,11 +50,63 @@ const AdminDashboard = () => {
       const data = response.data.studentAttendance;
       setAttendanceData(Array.isArray(data) ? data : []);
     } catch (error) {
-      console.error("Error fetching attendance data:", error);
-      alert("Failed to fetch attendance data. Please try again later.");
+      // Extract error details
+      const statusCode = error.response?.status;
+      const errorMessage = error.response?.data?.message || error.message;
+
+      // Log error for debugging
+      console.error("Attendance Data Fetch Error:", {
+        statusCode,
+        message: errorMessage,
+        error,
+      });
+
+      // Handle specific error cases
+      const errorResponses = {
+        401: {
+          message: "Your session has expired. Please log in again.",
+          action: () => {
+            setAttendanceData([]);
+            logout();
+          },
+        },
+        403: {
+          message: "You do not have permission to access this data.",
+          action: () => setAttendanceData([]),
+        },
+        404: {
+          message: "No attendance records found for today.",
+          action: () => setAttendanceData([]),
+        },
+        500: {
+          message: "Server error occurred. Please try again later.",
+          action: () => setAttendanceData([]),
+        },
+      };
+
+      const errorHandler = errorResponses[statusCode] || {
+        message: "Failed to fetch attendance data. Please try again.",
+        action: () => setAttendanceData([]),
+      };
+
+      // Display error toast/notification
+      alert(errorHandler.message);
+      errorHandler.action();
     } finally {
       setLoading(false);
     }
+  };
+
+  const filterStoredData = () => {
+    if (!previewData.length) return [];
+    
+    return previewData.filter(record => {
+      const recordDate = new Date(record.dateOnly);
+      const startDate = new Date(dateRange.start);
+      const endDate = new Date(dateRange.end);
+      
+      return recordDate >= startDate && recordDate <= endDate;
+    });
   };
 
   const getAttendanceStats = () => {
@@ -70,15 +122,15 @@ const AdminDashboard = () => {
   };
 
   const handleSearch = async (type) => {
-    if (type === 'regNo' && !registerNumber) {
+    if (type === "regNo" && !registerNumber) {
       alert("Please enter a register number");
       return;
     }
-    if (type === 'department' && !department) {
+    if (type === "department" && !department) {
       alert("Please select a department");
       return;
     }
-    if (type === 'dateRange' && (!dateRange.start || !dateRange.end)) {
+    if (type === "dateRange" && (!dateRange.start || !dateRange.end)) {
       alert("Please select both start and end dates");
       return;
     }
@@ -87,17 +139,14 @@ const AdminDashboard = () => {
     try {
       let response;
       switch (type) {
-        case 'regNo':
+        case "regNo":
           response = await studentbyRegisterNo(registerNumber);
           break;
-        case 'department':
+        case "department":
           response = await getDepartmentReport(department);
           break;
-        case 'dateRange':
-          response = await getDateRangeReport(dateRange.start, dateRange.end);
-          break;
         default:
-          throw new Error('Invalid search type');
+          throw new Error("Invalid search type");
       }
       setPreviewData(response.data.records || []);
       setSearchPerformed(true);
@@ -109,86 +158,101 @@ const AdminDashboard = () => {
     }
   };
 
-  const handleGenerateReport = (type) => {
-    if (!previewData.length) return;
-    
-    const filename = `attendance_report_${type}_${new Date().toISOString().split('T')[0]}.csv`;
-    const headers = "Date,Name,Register Number,Department,Status\n";
-    const csvData = previewData
-      .map(item => 
-        `${item.dateOnly},${item.name},${item.registrationNumber},${item.department},${item.attendanceStatus}`
-      )
-      .join("\n");
-    
-    const blob = new Blob([headers + csvData], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = filename;
-    link.click();
+  const handleAllData = async () => {
+    setLoading(true);
+    try {
+      let response = await allData();
+      setPreviewData(response.data.studentAttendance || []);
+      setSearchPerformed(true);
+    } catch (error) {
+      console.error("Error fetching data:", error);
+      alert("Failed to fetch data. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
-    const renderPreviewTable = (data) => (
-      <div className="bg-white rounded-2xl shadow-lg p-2 mt-2">
-        <div className="flex justify-between items-center mb-1">
-          <h3 className="text-xl font-semibold">Today Attendance Report</h3>
-          <button
-            onClick={() => {
-              // Direct CSV generation for attendance data
-              const filename = `attendance_report_${new Date().toISOString().split('T')[0]}.csv`;
-              const headers = "Date,Name,Register Number,Department,Status\n";
-              const csvData = data
-                .map(item => 
+  
+
+  const renderPreviewTable = (data) => (
+    <div className="bg-white rounded-2xl shadow-lg p-2 mt-2">
+      <div className="flex justify-between items-center mb-1">
+        <h3 className="text-xl font-semibold">Today Attendance Report</h3>
+        <button
+          onClick={() => {
+            const filename = `attendance_report_${
+              new Date().toISOString().split("T")[0]
+            }.csv`;
+            const headers = "Date,Name,Register Number,Department,Status\n";
+            const csvData = data
+              .map(
+                (item) =>
                   `${item.dateOnly},${item.name},${item.registrationNumber},${item.department},${item.attendanceStatus}`
-                )
-                .join("\n");
-            
-              const blob = new Blob([headers + csvData], { type: "text/csv" });
-              const url = URL.createObjectURL(blob);
-              const link = document.createElement("a");
-              link.href = url;
-              link.download = filename;
-              link.click();
-            }}
-            className="flex items-center gap-2 px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-xl"
-          >
-            <ArrowDownTrayIcon className="w-4 h-4" />
-            Download CSV
-          </button>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-4 py-3 text-left text-sm font-medium text-gray-500 uppercase">Date</th>
-                <th className="px-4 py-3 text-left text-sm font-medium text-gray-500 uppercase">Name</th>
-                <th className="px-4 py-3 text-left text-sm font-medium text-gray-500 uppercase">Reg No</th>
-                <th className="px-4 py-3 text-left text-sm font-medium text-gray-500 uppercase">Department</th>
-                <th className="px-4 py-3 text-left text-sm font-medium text-gray-500 uppercase">Status</th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {data.map((item, index) => (
-                <tr key={index} className="hover:bg-gray-50">
-                  <td className="px-4 py-3 whitespace-nowrap">{item.dateOnly}</td>
-                  <td className="px-4 py-3 whitespace-nowrap">{item.name}</td>
-                  <td className="px-4 py-3 whitespace-nowrap">{item.registrationNumber}</td>
-                  <td className="px-4 py-3 whitespace-nowrap">{item.department}</td>
-                  <td className="px-4 py-3 whitespace-nowrap">
-                    <span className={`px-2 py-1 text-sm rounded-full ${
+              )
+              .join("\n");
+
+            const blob = new Blob([headers + csvData], { type: "text/csv" });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.href = url;
+            link.download = filename;
+            link.click();
+          }}
+          className="flex items-center gap-2 px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-xl"
+        >
+          <ArrowDownTrayIcon className="w-4 h-4" />
+          Download CSV
+        </button>
+      </div>
+      <div className="overflow-x-auto">
+        <table className="min-w-full divide-y divide-gray-200">
+          <thead className="bg-gray-50">
+            <tr>
+              <th className="px-4 py-3 text-left text-sm font-medium text-gray-500 uppercase">
+                Date
+              </th>
+              <th className="px-4 py-3 text-left text-sm font-medium text-gray-500 uppercase">
+                Name
+              </th>
+              <th className="px-4 py-3 text-left text-sm font-medium text-gray-500 uppercase">
+                Reg No
+              </th>
+              <th className="px-4 py-3 text-left text-sm font-medium text-gray-500 uppercase">
+                Department
+              </th>
+              <th className="px-4 py-3 text-left text-sm font-medium text-gray-500 uppercase">
+                Status
+              </th>
+            </tr>
+          </thead>
+          <tbody className="bg-white divide-y divide-gray-200">
+            {data.map((item, index) => (
+              <tr key={index} className="hover:bg-gray-50">
+                <td className="px-4 py-3 whitespace-nowrap">{item.dateOnly}</td>
+                <td className="px-4 py-3 whitespace-nowrap">{item.name}</td>
+                <td className="px-4 py-3 whitespace-nowrap">
+                  {item.registrationNumber}
+                </td>
+                <td className="px-4 py-3 whitespace-nowrap">
+                  {item.department}
+                </td>
+                <td className="px-4 py-3 whitespace-nowrap">
+                  <span
+                    className={`px-2 py-1 text-sm rounded-full ${
                       item.attendanceStatus === "present"
                         ? "bg-green-100 text-green-800"
                         : "bg-red-100 text-red-800"
-                    }`}>
-                      {item.attendanceStatus}
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                    }`}
+                  >
+                    {item.attendanceStatus}
+                  </span>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
-    );
+    </div>
+  );
   const { totalStudents, presentCount, leaveCount } = getAttendanceStats();
 
   return (
@@ -203,7 +267,9 @@ const AdminDashboard = () => {
                 Admin Dashboard
               </h1>
               <p className="text-gray-600 mt-1">
-                {activeTab === "attendance" ? "Today's Attendance Overview" : "Student Reports Management"}
+                {activeTab === "attendance"
+                  ? "Today's Attendance Overview"
+                  : "Student Reports Management"}
               </p>
             </div>
             <button
@@ -292,9 +358,17 @@ const AdminDashboard = () => {
               {/* Report Type Tabs */}
               <div className="flex justify-center space-x-4 mb-8">
                 {[
-                  { id: "regNo", label: "Register Number", icon: UserCircleIcon },
-                  { id: "department", label: "Department", icon: AcademicCapIcon },
-                  { id: "dateRange", label: "Date Range", icon: ClockIcon }
+                  {
+                    id: "regNo",
+                    label: "Register Number",
+                    icon: UserCircleIcon,
+                  },
+                  {
+                    id: "department",
+                    label: "Department",
+                    icon: AcademicCapIcon,
+                  },
+                  { id: "dateRange", label: "All Data", icon: ClockIcon },
                 ].map((tab) => (
                   <button
                     key={tab.id}
@@ -315,7 +389,9 @@ const AdminDashboard = () => {
               <div className="bg-white rounded-2xl shadow-lg p-6">
                 {reportTab === "regNo" && (
                   <div className="space-y-6">
-                    <h2 className="text-2xl font-bold">Register Number Search</h2>
+                    <h2 className="text-2xl font-bold">
+                      Register Number Search
+                    </h2>
                     <div className="flex gap-4">
                       <input
                         type="text"
@@ -325,7 +401,7 @@ const AdminDashboard = () => {
                         className="flex-1 px-4 py-2 border rounded-xl"
                       />
                       <button
-                        onClick={() => handleSearch('regNo')}
+                        onClick={() => handleSearch("regNo")}
                         className="px-6 py-2 bg-cyan-600 text-white rounded-xl"
                         disabled={loading}
                       >
@@ -334,61 +410,90 @@ const AdminDashboard = () => {
                     </div>
                   </div>
                 )}
-
                 {reportTab === "department" && (
                   <div className="space-y-6">
                     <h2 className="text-2xl font-bold">Department Search</h2>
-                    <div className="flex gap-4">
-                      <select
-                        value={department}
-                        onChange={(e) => setDepartment(e.target.value)}
-                        className="flex-1 px-4 py-2 border rounded-xl"
-                      >
-                        <option value="">Select Department</option>
-                        <option value="CSE">Computer Science</option>
-                        <option value="ECE">Electronics</option>
-                        <option value="MECH">Mechanical</option>
-                        <option value="CIVIL">Civil</option>
-                      </select>
-                      <button
-                        onClick={() => handleSearch('department')}
-                        className="px-6 py-2 bg-cyan-600 text-white rounded-xl"
-                        disabled={loading}
-                      >
-                        {loading ? "Searching..." : "Search"}
-                      </button>
+                    <div className="flex flex-col md:flex-row gap-4">
+                      <div className="w-full md:w-1/3">
+                        <select
+                          value={department}
+                          onChange={(e) => setDepartment(e.target.value)}
+                          className="w-full px-4 py-2 border rounded-xl"
+                        >
+                          <option value="">Select Department</option>
+                          <option value="CSE">Computer Science</option>
+                          <option value="ECE">Electronics</option>
+                          <option value="MECH">Mechanical</option>
+                          <option value="EEE">Electrical</option>
+                        </select>
+                        <button
+                          onClick={() => {
+                            // Reset date range when searching by department only
+                            setDateRange({ start: "", end: "" })
+                            handleSearch("department")
+                          }}
+                          className="mt-4 w-full px-6 py-2 bg-cyan-600 text-white rounded-xl disabled:opacity-50"
+                          disabled={loading || !department}
+                        >
+                          {loading ? "Searching..." : "View All Records"}
+                        </button>
+                      </div>
+
+                      <div className="w-full md:w-2/3">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <input
+                            type="date"
+                            value={dateRange.start}
+                            onChange={(e) =>
+                              setDateRange({
+                                ...dateRange,
+                                start: e.target.value,
+                              })
+                            }
+                            className="w-full px-4 py-2 border rounded-xl"
+                          />
+                          <input
+                            type="date"
+                            value={dateRange.end}
+                            onChange={(e) =>
+                              setDateRange({
+                                ...dateRange,
+                                end: e.target.value,
+                              })
+                            }
+                            className="w-full px-4 py-2 border rounded-xl"
+                          />
+                          <button
+                            className="mt-4 w-full px-6 py-2 bg-cyan-600 text-white rounded-xl disabled:opacity-50"
+                            onClick={() => {
+                              if (department && dateRange.start && dateRange.end) {
+                                const filteredData = filterStoredData();
+                                setPreviewData(filteredData);
+                              } else {
+                                alert("Please select department and date range");
+                              }
+                            }}
+                            
+                          >
+                            {loading ? "Filtering..." : "Filter by Date Range"}
+                          </button>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 )}
-
                 {reportTab === "dateRange" && (
                   <div className="space-y-6">
-                    <h2 className="text-2xl font-bold">Date Range Search</h2>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <input
-                        type="date"
-                        value={dateRange.start}
-                        onChange={(e) => setDateRange({...dateRange, start: e.target.value})}
-                        className="px-4 py-2 border rounded-xl"
-                      />
-                      <input
-                        type="date"
-                        value={dateRange.end}
-                        onChange={(e) => setDateRange({...dateRange, end: e.target.value})}
-                        className="px-4 py-2 border rounded-xl"
-                      />
-                      <button
-                        onClick={() => handleSearch('dateRange')}
-                        className="md:col-span-2 px-6 py-2 bg-cyan-600 text-white rounded-xl"
-                        disabled={loading}
-                      >
-                        {loading ? "Searching..." : "Generate Report"}
-                      </button>
-                    </div>
+                    <h2 className="text-2xl font-bold">All Attendance Data</h2>
+                    <button
+                    onClick={handleAllData}
+                    className = "px-6 py-2 bg-cyan-600 text-white rounded-xl"
+                    >All Data</button>
                   </div>
                 )}
-
-                {searchPerformed && previewData.length > 0 && renderPreviewTable(previewData)}
+                {searchPerformed &&
+                  previewData.length > 0 &&
+                  renderPreviewTable(previewData)}
               </div>
             </div>
           )}
@@ -400,4 +505,3 @@ const AdminDashboard = () => {
 };
 
 export default AdminDashboard;
-

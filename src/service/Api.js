@@ -68,7 +68,7 @@ export const AttendanceApi = async (data) => {
 };
 
 
-// All Student Attendance API
+// All Student Attendance API by curent  date
 export const CurrentAttendanceByDate = async () => {
   const token = localStorage.getItem('authToken');
   const userId = localStorage.getItem('userId');
@@ -92,8 +92,6 @@ export const CurrentAttendanceByDate = async () => {
   }
 };
 
-// All Student Attendance API
-
 //Student  Attendance by register number
 export const studentbyRegisterNo = async (registrationNumber) => {
   const USER_URL = `http://localhost:3000/admin/${registrationNumber}`;
@@ -106,12 +104,27 @@ export const studentbyRegisterNo = async (registrationNumber) => {
   });
 };
 
-
+// Department Attendance Report API
 export const getDepartmentReport = async (department) => {
-  console.log("Fetching department report for:", department);
+  const USER_URL = `http://localhost:3000/admin/department/${department}`;
+  const token = localStorage.getItem('authToken');
+  return await axios.get(USER_URL, {
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    }
+  });
 };
 
-export const getDateRangeReport = async (startDate, endDate) => {
-  console.log("Fetching date range report for:", startDate, "to", endDate);
+// Date Range Attendance Report API
+export const allData = async () => {
+  const USER_URL = `http://localhost:3000/admin/all`;
+  const token = localStorage.getItem('authToken');
+  return await axios.get(USER_URL, {
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    }
+  });
 };
   
