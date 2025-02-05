@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Navigate } from "react-router-dom";
-import { isAuthenticated, logout } from "../service/Auth";
+import { isAuthenticated, logout, isAdminAuthentication } from "../service/Auth";
 import Header from "../component/Header";
 import Footer from "../component/Footer";
 import {
@@ -41,13 +41,15 @@ const AdminDashboard = () => {
     fetchAttendanceData();
   }, []);
 
-  if (!isAuthenticated()) {
-    return <Navigate to="/" />;
-  }
+  if (!isAdminAuthentication()) {
+      return <Navigate to="/" />;
+    }else if (isAuthenticated()) {
+      return <Navigate to="/dashboard" />;
+    }
 
   const handleLogout = () => logout();
 
-  const fetchAttendanceData = async () => {
+  async function fetchAttendanceData() {
     setLoading(true);
     try {
       const response = await CurrentAttendanceByDate();
@@ -303,7 +305,7 @@ const AdminDashboard = () => {
         <div className="max-w-7xl mx-auto">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
             <div>
-              <h1 className="text-3xl md:text-4xl font-bold text-gray-800 flex items-center gap-2">
+              <h1 className="text-4xl md:text-5xl font-bold text-gray-900 shadow-sm flex items-center gap-2">
                 <UserCircleIcon className="w-8 h-8 text-cyan-600" />
                 Admin Dashboard
               </h1>

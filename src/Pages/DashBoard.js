@@ -1,17 +1,16 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, Navigate } from "react-router-dom";
-import { isAuthenticated, logout } from "../service/Auth";
+import { isAuthenticated, logout, isAdminAuthentication } from "../service/Auth";
 import Header from "../component/Header";
 import Footer from "../component/Footer";
 import { AttendanceApi, UserApi } from "../service/Api";
 import {
   ArrowPathIcon,
   UserCircleIcon,
-  TableCellsIcon,
   MapPinIcon,
   ClockIcon,
   CheckCircleIcon,
-  XCircleIcon
+  XCircleIcon,
 } from "@heroicons/react/24/outline";
 
 const COMPANY_LAT = 8.79288;
@@ -120,9 +119,9 @@ const DashBoard = () => {
     navigate("/");
   };
 
-  if (!isAuthenticated()) {
-    return <Navigate to="/" />;
-  }
+ if (!isAuthenticated()&& isAdminAuthentication()) {
+     return <Navigate to="/admin" />;
+   }
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-gray-100">

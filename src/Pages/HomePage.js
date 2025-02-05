@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { LoginApi } from '../service/Api';
 import { storeUserData, storeUserId, storeUserName, storeRegisterNumber, storeDepartment } from '../service/Storage'; 
 import { Link, Navigate } from 'react-router-dom';
-import { isAuthenticated } from '../service/Auth';
+import { isAdminAuthentication, isAuthenticated } from '../service/Auth';
 import Header from '../component/Header';
 import Footer from '../component/Footer';
 
@@ -73,9 +73,12 @@ export default function HomePage() {
         }
     };
 
-    if (isAuthenticated()) {
+    if (isAdminAuthentication()) {
+        return <Navigate to="/admin" />;
+    }else if (isAuthenticated()) {
         return <Navigate to="/dashboard" />;
     }
+    
 
     return (
         <div className="min-h-screen flex flex-col"> 
