@@ -139,3 +139,36 @@ export const searchUserByUserId = async (userId) => {
     }
   });
 };
+
+// Get User Messages API by UserId
+export const getUserMessages = async () => {
+  const token = localStorage.getItem('authToken');
+  const userId = localStorage.getItem('userId');
+
+  if (!token || !userId) {
+    throw new Error('Missing authentication token or userId');
+  }
+
+  try {
+    const response = await axios.get(`http://localhost:3000/attendance/message/${userId}`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    return response.data;
+  } catch (error) {
+    if (error.response) {
+      // Handle known HTTP errors
+      console.error(`Error (${error.response.status}): ${error.response.data}`);
+    } else if (error.request) {
+      // Network error or no response from server
+      console.error('Network error:', error.request);
+    } else {
+      // Handle other errors (axios setup, etc.)
+      console.error('Unexpected error:', error.message);
+    }
+    throw error;
+  }
+};
+

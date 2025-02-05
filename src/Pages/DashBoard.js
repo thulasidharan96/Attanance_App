@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate, Navigate } from "react-router-dom";
 import { isAuthenticated, logout, isAdminAuthentication } from "../service/Auth";
 import Header from "../component/Header";
 import Footer from "../component/Footer";
-import { AttendanceApi, UserApi } from "../service/Api";
+import { AttendanceApi, UserApi, getUserMessages } from "../service/Api";
 import {
   ArrowPathIcon,
   UserCircleIcon,
@@ -11,11 +11,14 @@ import {
   ClockIcon,
   CheckCircleIcon,
   XCircleIcon,
+  BellIcon,
 } from "@heroicons/react/24/outline";
+import axios from "axios";
 
 const COMPANY_LAT = 8.79288;
 const COMPANY_LON = 78.12069;
 const LOCATION_RADIUS = 1000;
+const TIMEOUT = 5000;
 
 const getDistance = (lat1, lon1, lat2, lon2) => {
   const R = 6371;
@@ -41,6 +44,40 @@ const Notification = ({ message, type }) => (
   </div>
 );
 
+const NotificationCard = ({ notifications, onClose }) => (
+  <div className="fixed top-20 left-1/2 transform -translate-x-1/2 w-full max-w-md bg-white rounded-3xl shadow-xl z-50 overflow-hidden">
+    <div className="bg-gray-600 p-4 rounded-t-3xl shadow-lg">
+      <div className="flex justify-between items-center ">
+        <h2 className="text-2xl font-bold text-white">Notifications</h2>
+        <button onClick={onClose} className="text-white hover:text-gray-300">
+          <XCircleIcon className="w-6 h-6" />
+        </button>
+      </div>
+    </div>
+    {notifications.length === 0 ? (
+      <div className="p-4 text-center">
+        <p className="text-white font-semibold">No notifications yet.</p>
+      </div>
+    ) : (
+      <ul className="divide-y bg-gray-600">
+        {notifications.map((notification, index) => (
+          <li
+            key={index}
+            className="px-4 py-4 hover:bg-gray-700 transition-all duration-300 rounded-xl"
+          >
+            <div className="flex justify-between items-start">
+              <div className="flex-1">
+                <p className="text-white font-bold">{notification.message}</p>
+              </div>
+              <p className="text-sm text-white ml-4">{notification.time}</p>
+            </div>
+          </li>
+        ))}
+      </ul>
+    )}
+  </div>
+);
+
 const DashBoard = () => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -51,53 +88,84 @@ const DashBoard = () => {
   const userId = localStorage.getItem("userId");
   const [userName] = useState(localStorage.getItem("name") || "");
   const [registerNumber] = useState(localStorage.getItem("RegisterNumber") || "");
+  const [showNotificationCard, setShowNotificationCard] = useState(false);
+  const [notifications, setNotifications] = useState([]);
+  const [attendanceUpdated, setAttendanceUpdated] = useState(false);
+  const notificationTimeout = useRef(null);
 
   const showNotification = (message, type) => {
     setNotification({ message, type });
-    setTimeout(() => setNotification(null), 3000);
+
+    clearTimeout(notificationTimeout.current);
+
+    notificationTimeout.current = setTimeout(() => {
+      setNotification(null);
+    }, 3000);
   };
 
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await UserApi(userId);
+      const source = axios.CancelToken.source();
+      setTimeout(() => {
+        source.cancel("Timeout exceeded");
+      }, TIMEOUT);
+
+      const response = await UserApi(userId, { cancelToken: source.token });
       setUsers(response.data);
     } catch (error) {
-      showNotification("Failed to fetch attendance data", "error");
-      console.error("Error fetching users:", error);
+      if (axios.isCancel(error)) {
+        showNotification("Request timed out", "error");
+        console.log("Request timed out:", error.message);
+      } else {
+        showNotification("Failed to fetch attendance data", "error");
+        console.error("Error fetching users:", error);
+      }
     } finally {
       setLoading(false);
     }
-  };
+  }, [userId]);
 
   useEffect(() => {
-    if (userId) fetchUsers();
-  }, [userId]);
+    if (userId) {
+      fetchUsers();
+    }
+  }, [userId, fetchUsers, attendanceUpdated]);
 
   const handleClick = async () => {
     setProcessing(true);
     try {
-      const attendanceStatus = isWithinLocation ? 'present' : 'leave';
-      const response = await AttendanceApi({ attendanceStatus });
-      
+      const attendanceStatus = isWithinLocation ? "present" : "leave";
+      const source = axios.CancelToken.source();
+      setTimeout(() => {
+        source.cancel("Timeout exceeded");
+      }, TIMEOUT);
+
+      const response = await AttendanceApi({ attendanceStatus }, { cancelToken: source.token });
       if (response) {
         const statusMessage = isWithinLocation
           ? "Present marked successfully!"
           : "Absent marked successfully!";
         showNotification(statusMessage, "success");
-        await fetchUsers();
+        setAttendanceUpdated(prev => !prev);
       }
     } catch (error) {
-      showNotification("Failed to mark attendance", "error");
-      console.error("Error marking attendance:", error);
+      if (axios.isCancel(error)) {
+        showNotification("Request timed out", "error");
+        console.log("Request timed out:", error.message);
+      } else {
+        showNotification("Failed to mark attendance", "error");
+        console.error("Error marking attendance:", error);
+      }
     } finally {
       setProcessing(false);
     }
   };
 
   useEffect(() => {
+    let watchId;
     if (navigator.geolocation) {
-      const watchId = navigator.geolocation.watchPosition(
+      watchId = navigator.geolocation.watchPosition(
         (position) => {
           const distance = getDistance(
             position.coords.latitude,
@@ -110,8 +178,12 @@ const DashBoard = () => {
         (error) => console.error("Location error:", error),
         { enableHighAccuracy: true }
       );
-      return () => navigator.geolocation.clearWatch(watchId);
     }
+    return () => {
+      if (watchId) {
+        navigator.geolocation.clearWatch(watchId);
+      }
+    };
   }, []);
 
   const handleLogout = () => {
@@ -119,9 +191,49 @@ const DashBoard = () => {
     navigate("/");
   };
 
- if (!isAuthenticated()&& isAdminAuthentication()) {
-     return <Navigate to="/admin" />;
-   }
+  const toggleNotificationCard = useCallback(async () => {
+    setShowNotificationCard(prev => !prev);
+
+    if (!showNotificationCard) {
+      try {
+        console.log(localStorage.getItem("userId"));
+        const messages = await getUserMessages();
+
+        if (Array.isArray(messages)) { 
+          const newNotifications = messages.map(message => ({
+            id: message._id,
+            message: message.message,
+            time: new Date(message.date).toISOString().split('T')[0], // Trimming time, only date remains
+          }));
+          setNotifications(newNotifications);
+          setTimeout(() => {
+            setShowNotificationCard(false);
+          }, 5000);
+        } else {
+          throw new Error('Invalid response format');
+        }
+
+      } catch (error) {
+        if (axios.isCancel(error)) {
+          showNotification('Request timed out', 'error');
+        } else {
+          console.error('Failed to fetch messages:', error);
+          showNotification('Failed to fetch notifications', 'error');
+        }
+        setNotifications([]);
+      }
+    }
+  }, [showNotificationCard]);
+
+  useEffect(() => {
+    if (!showNotificationCard) {
+      setNotifications([]);
+    }
+  }, [showNotificationCard]);
+
+  if (!isAuthenticated() && isAdminAuthentication()) {
+    return <Navigate to="/admin" />;
+  }
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-gray-100">
@@ -139,6 +251,13 @@ const DashBoard = () => {
                 Manage your attendance and view history
               </p>
             </div>
+            <button
+              onClick={toggleNotificationCard}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-500/90 hover:bg-blue-600 text-white rounded-xl transition-all shadow-md hover:shadow-lg"
+            >
+              <BellIcon className="w-5 h-5" />
+              <span>Notifications</span>
+            </button>
             <button
               onClick={handleLogout}
               className="flex items-center gap-2 px-6 py-2 bg-red-500/90 hover:bg-red-600 text-white rounded-xl transition-all shadow-md hover:shadow-lg"
@@ -173,8 +292,8 @@ const DashBoard = () => {
               </h2>
               <div className="flex items-center gap-2">
                 <span className={`inline-flex items-center px-4 py-2 rounded-lg ${
-                  isWithinLocation 
-                    ? 'bg-green-100 text-green-800' 
+                  isWithinLocation
+                    ? 'bg-green-100 text-green-800'
                     : 'bg-red-100 text-red-800'
                 }`}>
                   {isWithinLocation ? (
@@ -275,6 +394,12 @@ const DashBoard = () => {
         </div>
       </main>
       <Footer />
+      {showNotificationCard && (
+        <NotificationCard
+          notifications={notifications}
+          onClose={toggleNotificationCard}
+        />
+      )}
     </div>
   );
 };

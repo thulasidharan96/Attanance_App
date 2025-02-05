@@ -52,15 +52,11 @@ export default function HomePage() {
             storeUserName(response.data.name);
             storeRegisterNumber(response.data.RegisterNumber);
             storeDepartment(response.data.department);
+            localStorage.setItem("role", response.data.role);
 
             //console.log(response.data.name);
             //console.log(response.data.RegisterNumber)
             //console.log(getRegisterNumber());
-
-            
-            if (isAuthenticated()) {
-                return <Navigate to="/dashboard" />;
-            }
         } catch (err) {
             setErrors({
                 ...errorsCopy,

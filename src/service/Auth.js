@@ -24,6 +24,10 @@ export const isAuthenticated = () => {
   }
 };
 
+export const isAuth = ()=>{
+  return getUserData()!=null?true:false;
+}
+
 export const logout = () => {
   removeUserData();
   window.location.href = '/';

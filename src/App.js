@@ -11,12 +11,11 @@ function App() {
     <BrowserRouter>
       <Routes>
         <Route path='/' element={<HomePage />} />
-        <Route path='/home' element={<HomePage />}/>
-        <Route path='/homepage' element={<HomePage />}/>
-        <Route path='/dashboard' element={<DashBoard />}/>
+        <Route path='/home' element={<HomePage />} />
         <Route path='/register' element={<RegisterPage />} />
+        <Route path='/dashboard' element={<DashBoard />} />
         <Route path='/admin' element={<AdminDashboard />} />
-        <Route path='*' element={<MissingPage/>}/>
+        <Route path='*' element={<MissingPage />} />
       </Routes>
     </BrowserRouter>
   );

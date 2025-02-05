@@ -43,8 +43,6 @@ const AdminDashboard = () => {
 
   if (!isAdminAuthentication()) {
       return <Navigate to="/" />;
-    }else if (isAuthenticated()) {
-      return <Navigate to="/dashboard" />;
     }
 
   const handleLogout = () => logout();
