@@ -127,4 +127,15 @@ export const allData = async () => {
     }
   });
 };
-  
+
+// Search User by UserId API
+export const searchUserByUserId = async (userId) => {
+  const API_URL = 'http://localhost:3000/admin/';
+  const token = localStorage.getItem('authToken');
+  return await axios.get(`${API_URL}/search/${userId}`, {
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    }
+  });
+};

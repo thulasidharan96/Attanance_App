@@ -7,7 +7,8 @@ import {
   CurrentAttendanceByDate,
   studentbyRegisterNo,
   getDepartmentReport,
-  allData
+  allData,
+  searchUserByUserId,
 } from "../service/Api";
 import {
   ArrowPathIcon,
@@ -32,6 +33,9 @@ const AdminDashboard = () => {
   const [previewData, setPreviewData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [searchPerformed, setSearchPerformed] = useState(false);
+
+  const [userId, setuserId] = useState("");
+  const [foundUser, setFoundUser] = useState(null);
 
   useEffect(() => {
     fetchAttendanceData();
@@ -99,12 +103,12 @@ const AdminDashboard = () => {
 
   const filterStoredData = () => {
     if (!previewData.length) return [];
-    
-    return previewData.filter(record => {
+
+    return previewData.filter((record) => {
       const recordDate = new Date(record.dateOnly);
       const startDate = new Date(dateRange.start);
       const endDate = new Date(dateRange.end);
-      
+
       return recordDate >= startDate && recordDate <= endDate;
     });
   };
@@ -171,7 +175,44 @@ const AdminDashboard = () => {
       setLoading(false);
     }
   };
-  
+
+  const handleUserSearch = async () => {
+    setLoading(true);
+    try {
+      const response = await searchUserByUserId(userId);
+      // Access first item from array since response contains array with single user
+      setFoundUser(response.data.records[0]);
+      console.log("Found user:", response.data.records[0]);
+    } catch (error) {
+      alert("User not found");
+      setFoundUser(null);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleEditUser = async (userId) => {
+    try {
+      // Implement your edit user logic here
+      alert("Edit user functionality to be implemented");
+    } catch (error) {
+      alert("Failed to edit user");
+    }
+  };
+
+  const handleDeleteUser = async (userId) => {
+    if (window.confirm("Are you sure you want to delete this user?")) {
+      try {
+        // Implement your delete user logic here
+
+        alert("Delete user functionality to be implemented");
+        setFoundUser(null);
+        setuserId("");
+      } catch (error) {
+        alert("Failed to delete user");
+      }
+    }
+  };
 
   const renderPreviewTable = (data) => (
     <div className="bg-white rounded-2xl shadow-lg p-2 mt-2">
@@ -269,7 +310,9 @@ const AdminDashboard = () => {
               <p className="text-gray-600 mt-1">
                 {activeTab === "attendance"
                   ? "Today's Attendance Overview"
-                  : "Student Reports Management"}
+                  : activeTab === "reports"
+                  ? "Student Reports Management"
+                  : "User Management"}
               </p>
             </div>
             <button
@@ -282,7 +325,7 @@ const AdminDashboard = () => {
           </div>
 
           <div className="flex justify-center space-x-4 mb-8">
-            {["attendance", "reports"].map((tab) => (
+            {["attendance", "reports", "Setting"].map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
@@ -429,8 +472,8 @@ const AdminDashboard = () => {
                         <button
                           onClick={() => {
                             // Reset date range when searching by department only
-                            setDateRange({ start: "", end: "" })
-                            handleSearch("department")
+                            setDateRange({ start: "", end: "" });
+                            handleSearch("department");
                           }}
                           className="mt-4 w-full px-6 py-2 bg-cyan-600 text-white rounded-xl disabled:opacity-50"
                           disabled={loading || !department}
@@ -466,14 +509,19 @@ const AdminDashboard = () => {
                           <button
                             className="mt-4 w-full px-6 py-2 bg-cyan-600 text-white rounded-xl disabled:opacity-50"
                             onClick={() => {
-                              if (department && dateRange.start && dateRange.end) {
+                              if (
+                                department &&
+                                dateRange.start &&
+                                dateRange.end
+                              ) {
                                 const filteredData = filterStoredData();
                                 setPreviewData(filteredData);
                               } else {
-                                alert("Please select department and date range");
+                                alert(
+                                  "Please select department and date range"
+                                );
                               }
                             }}
-                            
                           >
                             {loading ? "Filtering..." : "Filter by Date Range"}
                           </button>
@@ -486,14 +534,94 @@ const AdminDashboard = () => {
                   <div className="space-y-6">
                     <h2 className="text-2xl font-bold">All Attendance Data</h2>
                     <button
-                    onClick={handleAllData}
-                    className = "px-6 py-2 bg-cyan-600 text-white rounded-xl"
-                    >All Data</button>
+                      onClick={handleAllData}
+                      className="px-6 py-2 bg-cyan-600 text-white rounded-xl"
+                    >
+                      All Data
+                    </button>
                   </div>
                 )}
                 {searchPerformed &&
                   previewData.length > 0 &&
                   renderPreviewTable(previewData)}
+              </div>
+            </div>
+          )}
+          {activeTab === "Setting" && (
+            <div className="space-y-8">
+              <div className="bg-white rounded-2xl shadow-lg p-6">
+                <h2 className="text-2xl font-bold mb-6">User Management</h2>
+
+                <div className="flex gap-4 mb-8">
+                  <input
+                    type="text"
+                    value={userId}
+                    onChange={(e) => setuserId(e.target.value)}
+                    placeholder="Search user by Registration Number"
+                    className="flex-1 px-4 py-2 border rounded-xl"
+                  />
+                  <button
+                    onClick={handleUserSearch}
+                    className="px-6 py-2 bg-cyan-600 text-white rounded-xl hover:bg-cyan-700"
+                    disabled={loading || !userId.trim()}
+                  >
+                    {loading ? "Searching..." : "Search"}
+                  </button>
+                </div>
+
+                {/* User Details Section */}
+                {foundUser && (
+                  <div className="border rounded-xl p-6 bg-gray-50">
+                    <div className="flex flex-col md:flex-row justify-between gap-6">
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-2">
+                          <UserCircleIcon className="w-8 h-8 text-cyan-600" />
+                          <h3 className="text-2xl font-semibold text-gray-800">
+                            {foundUser.name}
+                          </h3>
+                        </div>
+                        <div className="space-y-2 text-gray-600">
+                          <p className="flex items-center gap-2">
+                            <span className="font-medium">Email:</span>{" "}
+                            {foundUser.email}
+                          </p>
+                          <p className="flex items-center gap-2">
+                            <span className="font-medium">Department:</span>{" "}
+                            {foundUser.department}
+                          </p>
+                          <p className="flex items-center gap-2">
+                            <span className="font-medium">ID:</span>{" "}
+                            {foundUser._id}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex flex-col gap-3">
+                        <button
+                          onClick={() => handleEditUser(foundUser._id)}
+                          className="px-6 py-2 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition-colors"
+                        >
+                          Edit User
+                        </button>
+                        <button
+                          onClick={() => handleDeleteUser(foundUser._id)}
+                          className="px-6 py-2 bg-red-500 text-white rounded-xl hover:bg-red-600 transition-colors"
+                        >
+                          Delete User
+                        </button>
+                        <button
+                          onClick={() => {
+                            setuserId("");
+                            setFoundUser(null);
+                          }}
+                          className="px-6 py-2 bg-gray-500 text-white rounded-xl hover:bg-gray-600 transition-colors"
+                        >
+                          Clear
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           )}
