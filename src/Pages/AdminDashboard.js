@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Navigate } from "react-router-dom";
-import { isAuthenticated, logout, isAdminAuthentication } from "../service/Auth";
+import { logout, isAdminAuthentication } from "../service/Auth";
 import Header from "../component/Header";
 import Footer from "../component/Footer";
 import {
