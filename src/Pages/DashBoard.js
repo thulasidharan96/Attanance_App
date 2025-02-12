@@ -59,11 +59,11 @@ const NotificationCard = ({ notifications, onClose }) => (
         <p className="text-white font-semibold">No notifications yet.</p>
       </div>
     ) : (
-      <ul className="divide-y bg-gray-600">
+      <ul className="border-gray-200 bg-gray-600">
         {notifications.map((notification, index) => (
           <li
             key={index}
-            className="px-4 py-4 hover:bg-gray-700 transition-all duration-300 rounded-xl"
+            className="px-4 py-4 hover:bg-gray-700 transition-all duration-300 rounded-xl border-t border-gray-200"
           >
             <div className="flex justify-between items-start">
               <div className="flex-1">
@@ -116,10 +116,10 @@ const DashBoard = () => {
     } catch (error) {
       if (axios.isCancel(error)) {
         showNotification("Request timed out", "error");
-        console.log("Request timed out:", error.message);
+        //console.log("Request timed out:", error.message);
       } else {
         showNotification("Failed to fetch attendance data", "error");
-        console.error("Error fetching users:", error);
+        //console.error("Error fetching users:", error);
       }
     } finally {
       setLoading(false);
@@ -152,10 +152,10 @@ const DashBoard = () => {
     } catch (error) {
       if (axios.isCancel(error)) {
         showNotification("Request timed out", "error");
-        console.log("Request timed out:", error.message);
+        //console.log("Request timed out:", error.message);
       } else {
-        showNotification("Failed to mark attendance", "error");
-        console.error("Error marking attendance:", error);
+        showNotification("Already Attendance Marked ", "error");
+        //console.error("Error marking attendance:", error);
       }
     } finally {
       setProcessing(false);
@@ -206,9 +206,9 @@ const DashBoard = () => {
             time: new Date(message.date).toISOString().split('T')[0], // Trimming time, only date remains
           }));
           setNotifications(newNotifications);
-          setTimeout(() => {
-            setShowNotificationCard(false);
-          }, 5000);
+           setTimeout(() => {
+           setShowNotificationCard(false);
+         }, 6000);
         } else {
           throw new Error('Invalid response format');
         }
