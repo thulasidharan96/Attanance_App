@@ -9,6 +9,7 @@ import {
   getDepartmentReport,
   allData,
   searchUserByUserId,
+  postUserMessage,
 } from "../service/Api";
 import {
   ArrowPathIcon,
@@ -218,7 +219,9 @@ const AdminDashboard = () => {
 
   const handleMessageUser = async (userId) => {
     try {
-      // Implement your send message logic here
+      const response = await postUserMessage(userId, setMessage);
+      console.log("Message sent successfully:", response);
+      console.log("Message:", message);
       alert("Send message functionality to be implemented");
     } catch (error) {
       alert("Failed to send message");
