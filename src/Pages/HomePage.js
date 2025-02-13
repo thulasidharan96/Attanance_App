@@ -77,7 +77,7 @@ export default function HomePage() {
     
 
     return (
-        <div className="min-h-screen flex flex-col"> 
+        <div className="vh-100 min-h-screen flex flex-col"> 
             <Header />
             <main className="flex-grow flex flex-col">
             <section className="flex-grow flex justify-center items-center bg-slate-400">
