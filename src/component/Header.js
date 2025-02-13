@@ -46,16 +46,17 @@ const Header = () => {
 
       {/* Mobile Navigation with Smooth Animation */}
       <div
-        className={`fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm transition-opacity duration-300 ${
+        className={`fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm transition-opacity duration-300 min-h-screen ${
           menuOpen ? "opacity-100 visible" : "opacity-0 invisible"
         }`}
         onClick={() => setMenuOpen(false)}
       ></div>
 
       <div
-        className={`fixed top-0 right-0 h-full w-64 bg-cyan-900 shadow-lg transform transition-transform duration-300 p-6 rounded-l-2xl ${
+        className={`fixed top-0 right-0 h-full w-64 bg-cyan-900 shadow-lg transform transition-transform duration-300 p-6 rounded-l-2xl min-h-screen ${
           menuOpen ? "translate-x-0" : "translate-x-full"
         }`}
+        style={{zIndex:9999}}
       >
         {/* Close Button Inside Menu */}
         <button

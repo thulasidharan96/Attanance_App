@@ -72,7 +72,7 @@ export default function HomePage() {
     }
 
     return (
-        <div className="flex flex-col min-h-screen ">
+        <div className="flex flex-col min-h-screen">
       <Header />
       <main className="flex-grow flex items-center justify-center bg-slate-400 px-4 py-8">
         <div className="w-full max-w-md bg-white rounded-lg shadow-md overflow-hidden">

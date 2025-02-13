@@ -7,7 +7,7 @@ const Footer = () => {
         <p className="text-sm font-light">
           &copy; {new Date().getFullYear()} AttenApp. All rights reserved.
         </p>
-        <p className="text-xs mt-2 opacity-75">Designed with ❤️ by TD</p>
+        <p className="text-xs mt-2 text-gray-400">Designed with ❤️ by TD</p>
       </div>
     </footer>
   );

@@ -1,11 +1,17 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate, Navigate } from "react-router-dom";
-import { isAuthenticated, logout, isAdminAuthentication } from "../service/Auth";
+import {
+  isAuthenticated,
+  logout,
+  isAdminAuthentication,
+} from "../service/Auth";
 import Header from "../component/Header";
 import Footer from "../component/Footer";
+import LeaveForm from "../component/LeaveForm";
 import { AttendanceApi, UserApi, getUserMessages } from "../service/Api";
 import {
   ArrowPathIcon,
+  ArrowRightStartOnRectangleIcon,
   UserCircleIcon,
   MapPinIcon,
   ClockIcon,
@@ -36,41 +42,43 @@ const getDistance = (lat1, lon1, lat2, lon2) => {
 
 const Notification = ({ message, type }) => (
   <div
-    className={`fixed top-4 left-1/2 transform -translate-x-1/2 px-8 py-4 rounded-xl shadow-2xl z-50 ${
+    className={`fixed top-4 left-1/2 transform -translate-x-1/2 px-4 md:px-8 py-2 md:py-4 rounded-lg md:rounded-xl shadow-lg z-50 ${
       type === "success" ? "bg-green-500" : "bg-red-500"
-    } text-white text-lg font-medium animate-fade-in`}
+    } text-white text-sm md:text-lg font-medium animate-fade-in`}
   >
     {message}
   </div>
 );
 
 const NotificationCard = ({ notifications, onClose }) => (
-  <div className="fixed top-20 left-1/2 transform -translate-x-1/2 w-full max-w-md bg-white rounded-3xl shadow-xl z-50 overflow-hidden">
-    <div className="bg-gray-600 p-4 rounded-t-3xl shadow-lg">
-      <div className="flex justify-between items-center ">
-        <h2 className="text-2xl font-bold text-white">Notifications</h2>
+  <div className="fixed top-20 left-1/2 transform -translate-x-1/2 w-full max-w-sm md:max-w-md bg-white rounded-2xl shadow-lg z-50 overflow-hidden">
+    <div className="bg-gray-800 p-4 rounded-t-2xl shadow-md">
+      <div className="flex justify-between items-center">
+        <h2 className="text-xl md:text-2xl font-bold text-white">
+          Notifications
+        </h2>
         <button onClick={onClose} className="text-white hover:text-gray-300">
           <XCircleIcon className="w-6 h-6" />
         </button>
       </div>
     </div>
     {notifications.length === 0 ? (
-      <div className="p-4 text-center">
+      <div className="p-4 text-center bg-gray-500">
         <p className="text-white font-semibold">No notifications yet.</p>
       </div>
     ) : (
-      <ul className="border-gray-200 bg-gray-600">
+      <ul className="bg-gray-500 divide-y divide-gray-200">
         {notifications.map((notification, index) => (
           <li
             key={index}
-            className="px-4 py-4 hover:bg-gray-700 transition-all duration-300 rounded-xl border-t border-gray-200"
+            className="px-4 py-4 hover:bg-gray-900 transition-all duration-300 rounded-lg border-t border-gray-200 flex justify-between items-start"
           >
-            <div className="flex justify-between items-start">
-              <div className="flex-1">
-                <p className="text-white font-bold">{notification.message}</p>
-              </div>
-              <p className="text-sm text-white ml-4">{notification.time}</p>
+            <div className="flex-1">
+              <p className="text-white font-bold">{notification.message}</p>
             </div>
+            <p className="text-xs md:text-sm text-gray-100 ml-4">
+              {notification.time}
+            </p>
           </li>
         ))}
       </ul>
@@ -87,7 +95,9 @@ const DashBoard = () => {
   const navigate = useNavigate();
   const userId = localStorage.getItem("userId");
   const [userName] = useState(localStorage.getItem("name") || "");
-  const [registerNumber] = useState(localStorage.getItem("RegisterNumber") || "");
+  const [registerNumber] = useState(
+    localStorage.getItem("RegisterNumber") || ""
+  );
   const [showNotificationCard, setShowNotificationCard] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const [attendanceUpdated, setAttendanceUpdated] = useState(false);
@@ -116,10 +126,8 @@ const DashBoard = () => {
     } catch (error) {
       if (axios.isCancel(error)) {
         showNotification("Request timed out", "error");
-        //console.log("Request timed out:", error.message);
       } else {
         showNotification("Failed to fetch attendance data", "error");
-        //console.error("Error fetching users:", error);
       }
     } finally {
       setLoading(false);
@@ -141,21 +149,22 @@ const DashBoard = () => {
         source.cancel("Timeout exceeded");
       }, TIMEOUT);
 
-      const response = await AttendanceApi({ attendanceStatus }, { cancelToken: source.token });
+      const response = await AttendanceApi(
+        { attendanceStatus },
+        { cancelToken: source.token }
+      );
       if (response) {
         const statusMessage = isWithinLocation
           ? "Present marked successfully!"
           : "Absent marked successfully!";
         showNotification(statusMessage, "success");
-        setAttendanceUpdated(prev => !prev);
+        setAttendanceUpdated((prev) => !prev);
       }
     } catch (error) {
       if (axios.isCancel(error)) {
         showNotification("Request timed out", "error");
-        //console.log("Request timed out:", error.message);
       } else {
         showNotification("Already Attendance Marked ", "error");
-        //console.error("Error marking attendance:", error);
       }
     } finally {
       setProcessing(false);
@@ -192,33 +201,31 @@ const DashBoard = () => {
   };
 
   const toggleNotificationCard = useCallback(async () => {
-    setShowNotificationCard(prev => !prev);
+    setShowNotificationCard((prev) => !prev);
 
     if (!showNotificationCard) {
       try {
-        console.log(localStorage.getItem("userId"));
         const messages = await getUserMessages();
 
-        if (Array.isArray(messages)) { 
-          const newNotifications = messages.map(message => ({
+        if (Array.isArray(messages)) {
+          const newNotifications = messages.map((message) => ({
             id: message._id,
             message: message.message,
-            time: new Date(message.date).toISOString().split('T')[0], // Trimming time, only date remains
+            time: new Date(message.date).toISOString().split("T")[0],
           }));
           setNotifications(newNotifications);
-           setTimeout(() => {
-           setShowNotificationCard(false);
-         }, 6000);
+          setTimeout(() => {
+            setShowNotificationCard(false);
+          }, 6000);
         } else {
-          throw new Error('Invalid response format');
+          throw new Error("Invalid response format");
         }
-
       } catch (error) {
         if (axios.isCancel(error)) {
-          showNotification('Request timed out', 'error');
+          showNotification("Request timed out", "error");
         } else {
-          console.error('Failed to fetch messages:', error);
-          showNotification('Failed to fetch notifications', 'error');
+          console.error("Failed to fetch messages:", error);
+          showNotification("Failed to fetch notifications", "error");
         }
         setNotifications([]);
       }
@@ -239,76 +246,87 @@ const DashBoard = () => {
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-gray-100">
       {notification && <Notification {...notification} />}
       <Header />
-      <main className="flex-grow p-6">
+      <main className="flex-grow p-4">
         <div className="max-w-7xl mx-auto">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+          <div className="flex md:flex-row justify-between items-start md:items-center mb-8 gap-4">
             <div>
-              <h1 className="text-3xl md:text-4xl font-bold text-gray-800 flex items-center gap-2">
-                <UserCircleIcon className="w-8 h-8 text-cyan-600" />
+              <h1 className="text-2xl md:text-4xl font-bold text-gray-800 flex items-center gap-2">
+                <UserCircleIcon className="w-6 h-6 md:w-8 md:h-8 text-cyan-600" />
                 Student Dashboard
               </h1>
-              <p className="text-gray-600 mt-1">
+              <p className="text-gray-600 mt-1 text-sm md:text-base">
                 Manage your attendance and view history
               </p>
             </div>
-            <button
-              onClick={toggleNotificationCard}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-500/90 hover:bg-blue-600 text-white rounded-xl transition-all shadow-md hover:shadow-lg"
-            >
-              <BellIcon className="w-5 h-5" />
-              <span>Notifications</span>
-            </button>
-            <button
-              onClick={handleLogout}
-              className="flex items-center gap-2 px-6 py-2 bg-red-500/90 hover:bg-red-600 text-white rounded-xl transition-all shadow-md hover:shadow-lg"
-            >
-              <span>Logout</span>
-              <ArrowPathIcon className="w-4 h-4 transform rotate-180" />
-            </button>
+            <div className="flex gap-2">
+              <button
+                onClick={toggleNotificationCard}
+                className="flex items-center gap-2 px-4 py-2 bg-blue-500/90 hover:bg-blue-600 text-white rounded-xl transition-all shadow-md hover:shadow-lg"
+              >
+                <BellIcon className="w-5 h-5" />
+                <span className="hidden md:inline">Notifications</span>
+              </button>
+              <button
+                onClick={handleLogout}
+                className="flex items-center gap-2 px-4 py-2 bg-red-500/90 hover:bg-red-600 text-white rounded-xl transition-all shadow-md hover:shadow-lg"
+              >
+                <span className="hidden md:inline">Logout</span>
+                <ArrowRightStartOnRectangleIcon className="w-5 h-5" />
+              </button>
+            </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-            <div className="bg-white rounded-2xl shadow-lg p-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <div className="bg-white rounded-2xl shadow-lg p-4">
               <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
                 <UserCircleIcon className="w-6 h-6 text-cyan-600" />
                 Student Information
               </h2>
-              <div className="space-y-4">
+              <div className="space-y-2">
                 <div className="flex items-center gap-2">
                   <span className="font-medium text-gray-700">Name:</span>
                   <span className="text-gray-800">{userName}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="font-medium text-gray-700">Register Number:</span>
+                  <span className="font-medium text-gray-700">
+                    Register Number:
+                  </span>
                   <span className="text-gray-800">{registerNumber}</span>
                 </div>
               </div>
             </div>
-
-            <div className="bg-white rounded-2xl shadow-lg p-6">
+          </div>
+          <div className="flex md:flex-row justify-between items-center">
+            <div className="bg-white rounded-2xl shadow-lg p-4 mb-4 md:w-auto">
               <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
                 <MapPinIcon className="w-6 h-6 text-cyan-600" />
                 Location Status
               </h2>
               <div className="flex items-center gap-2">
-                <span className={`inline-flex items-center px-4 py-2 rounded-lg ${
-                  isWithinLocation
-                    ? 'bg-green-100 text-green-800'
-                    : 'bg-red-100 text-red-800'
-                }`}>
+                <span
+                  className={`inline-flex items-center px-4 py-2 rounded-lg ${
+                    isWithinLocation
+                      ? "bg-green-100 text-green-800"
+                      : "bg-red-100 text-red-800"
+                  }`}
+                >
                   {isWithinLocation ? (
                     <CheckCircleIcon className="w-5 h-5 mr-2" />
                   ) : (
                     <XCircleIcon className="w-5 h-5 mr-2" />
                   )}
-                  {isWithinLocation ? 'Within Campus Range' : 'Outside Campus Range'}
+                  {isWithinLocation
+                    ? "Within Campus Range"
+                    : "Outside Campus Range"}
                 </span>
               </div>
             </div>
+            {/* Leave Request Section */}
+            <LeaveForm className="w-full md:w-auto" />
           </div>
 
           <div className="bg-white rounded-2xl shadow-lg overflow-hidden mb-8">
-            <div className="p-6 border-b border-gray-200">
+            <div className="p-4 border-b border-gray-200">
               <h2 className="text-xl font-semibold flex items-center gap-2">
                 <ClockIcon className="w-6 h-6 text-cyan-600" />
                 Attendance History
@@ -323,25 +341,31 @@ const DashBoard = () => {
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Date
+                      </th>
+                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Status
+                      </th>
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
                     {users.length > 0 ? (
                       users.map((user) => (
                         <tr key={user.id} className="hover:bg-gray-50">
-                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                          <td className="px-4 py-2 whitespace-nowrap text-sm font-medium text-gray-900">
                             {user.dateOnly}
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
-                              user.attendanceStatus === "present"
-                                ? "bg-green-100 text-green-800"
-                                : user.attendanceStatus === "late"
-                                ? "bg-yellow-100 text-yellow-800"
-                                : "bg-red-100 text-red-800"
-                            }`}>
+                          <td className="px-4 py-2 whitespace-nowrap">
+                            <span
+                              className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
+                                user.attendanceStatus === "present"
+                                  ? "bg-green-100 text-green-800"
+                                  : user.attendanceStatus === "late"
+                                  ? "bg-yellow-100 text-yellow-800"
+                                  : "bg-red-100 text-red-800"
+                              }`}
+                            >
                               {user.attendanceStatus}
                             </span>
                           </td>
@@ -349,7 +373,10 @@ const DashBoard = () => {
                       ))
                     ) : (
                       <tr>
-                        <td colSpan="2" className="px-6 py-4 text-center text-sm text-gray-500">
+                        <td
+                          colSpan="2"
+                          className="px-4 py-2 text-center text-sm text-gray-500"
+                        >
                           No attendance records found
                         </td>
                       </tr>
@@ -370,9 +397,9 @@ const DashBoard = () => {
                     ? "bg-gray-400"
                     : "bg-green-600 hover:bg-green-700"
                   : processing
-                    ? "bg-gray-400"
-                    : "bg-red-600 hover:bg-red-700"
-              } text-white`}
+                  ? "bg-gray-400"
+                  : "bg-red-600 hover:bg-red-700"
+              } text-white w-full md:w-auto`}
             >
               {processing ? (
                 <ArrowPathIcon className="w-5 h-5 animate-spin" />
@@ -385,9 +412,11 @@ const DashBoard = () => {
             <button
               onClick={fetchUsers}
               disabled={loading}
-              className="flex items-center justify-center gap-2 px-6 py-3 bg-cyan-600 hover:bg-cyan-700 text-white rounded-xl shadow-md transition-all"
+              className="flex items-center justify-center gap-2 px-6 py-3 bg-cyan-600 hover:bg-cyan-700 text-white rounded-xl shadow-md transition-all w-full md:w-auto"
             >
-              <ArrowPathIcon className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
+              <ArrowPathIcon
+                className={`w-5 h-5 ${loading ? "animate-spin" : ""}`}
+              />
               {loading ? "Syncing..." : "Sync Data"}
             </button>
           </div>

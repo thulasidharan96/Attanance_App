@@ -13,6 +13,7 @@ import {
 } from "../service/Api";
 import {
   ArrowPathIcon,
+  ArrowRightStartOnRectangleIcon,
   DocumentMagnifyingGlassIcon,
   TableCellsIcon,
   UserCircleIcon,
@@ -39,14 +40,13 @@ const AdminDashboard = () => {
   const [foundUser, setFoundUser] = useState(null);
   const [message, setMessage] = useState("");
 
-
   useEffect(() => {
     fetchAttendanceData();
   }, []);
 
   if (!isAdminAuthentication()) {
-      return <Navigate to="/" />;
-    }
+    return <Navigate to="/" />;
+  }
 
   const handleLogout = () => logout();
 
@@ -102,7 +102,7 @@ const AdminDashboard = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }
 
   const filterStoredData = () => {
     if (!previewData.length) return [];
@@ -226,15 +226,15 @@ const AdminDashboard = () => {
     } catch (error) {
       alert("Failed to send message");
     }
-  }
+  };
 
   const handleAnouncement = async (message) => {
     try {
       alert(message);
     } catch (error) {
-      alert("Failed to send message")
+      alert("Failed to send message");
     }
-  }
+  };
 
   const renderPreviewTable = (data) => (
     <div className="bg-white rounded-2xl shadow-lg p-2 mt-2">
@@ -323,13 +323,13 @@ const AdminDashboard = () => {
       <Header />
       <main className="flex-grow p-6">
         <div className="max-w-7xl mx-auto">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+          <div className="flex md:flex-row justify-between items-start md:items-center mb-8 gap-4">
             <div>
-              <h1 className="text-4xl md:text-5xl font-bold text-gray-900 shadow-sm flex items-center gap-2">
-                <UserCircleIcon className="w-8 h-8 text-cyan-600" />
+              <h1 className="text-2xl md:text-4xl font-bold text-gray-800 flex items-center gap-2">
+                <UserCircleIcon className="w-6 h-6 md:w-8 md:h-8 text-cyan-600" />
                 Admin Dashboard
               </h1>
-              <p className="text-gray-600 mt-1">
+              <p className="text-gray-600 mt-1 text-sm md:text-base">
                 {activeTab === "attendance"
                   ? "Today's Attendance Overview"
                   : activeTab === "reports"
@@ -339,10 +339,10 @@ const AdminDashboard = () => {
             </div>
             <button
               onClick={handleLogout}
-              className="flex items-center gap-2 px-6 py-2 bg-red-500/90 hover:bg-red-600 text-white rounded-xl"
+              className="flex items-center gap-2 px-4 py-2 bg-red-500/90 hover:bg-red-600 text-white rounded-xl transition-all shadow-md hover:shadow-lg"
             >
-              <span>Logout</span>
-              <ArrowPathIcon className="w-4 h-4 transform rotate-180" />
+              <span className="hidden md:inline">Logout</span>
+              <ArrowRightStartOnRectangleIcon className="w-5 h-5" />
             </button>
           </div>
 
@@ -356,6 +356,10 @@ const AdminDashboard = () => {
                     ? "bg-cyan-600 text-white"
                     : "bg-white text-gray-600 hover:bg-gray-50"
                 }`}
+                style={{
+                  padding: window.innerWidth <= 640 ? "8px 12px" : "12px 24px",
+                  fontSize: window.innerWidth <= 640 ? "14px" : "16px",
+                }}
               >
                 {tab === "attendance" ? (
                   <TableCellsIcon className="w-5 h-5" />
@@ -421,34 +425,39 @@ const AdminDashboard = () => {
           {activeTab === "reports" && (
             <div className="space-y-8">
               {/* Report Type Tabs */}
-              <div className="flex justify-center space-x-4 mb-8">
-                {[
-                  {
-                    id: "regNo",
-                    label: "Register Number",
-                    icon: UserCircleIcon,
-                  },
-                  {
-                    id: "department",
-                    label: "Department",
-                    icon: AcademicCapIcon,
-                  },
-                  { id: "dateRange", label: "All Data", icon: ClockIcon },
-                ].map((tab) => (
-                  <button
-                    key={tab.id}
-                    onClick={() => setReportTab(tab.id)}
-                    className={`flex items-center gap-2 px-6 py-3 rounded-xl font-medium ${
-                      reportTab === tab.id
-                        ? "bg-cyan-600 text-white"
-                        : "bg-white text-gray-600 hover:bg-gray-50"
-                    }`}
-                  >
-                    <tab.icon className="w-5 h-5" />
-                    {tab.label}
-                  </button>
-                ))}
-              </div>
+<div className="flex justify-center space-x-4 mb-8">
+  {[
+    {
+      id: "regNo",
+      label: "Register Number",
+      icon: UserCircleIcon,
+    },
+    {
+      id: "department",
+      label: "Department",
+      icon: AcademicCapIcon,
+    },
+    { id: "dateRange", label: "All Data", icon: ClockIcon },
+  ].map((tab) => (
+    <button
+      key={tab.id}
+      onClick={() => setReportTab(tab.id)}
+      className={`flex items-center gap-2 px-6 py-3 rounded-xl font-medium ${
+        reportTab === tab.id
+          ? "bg-cyan-600 text-white"
+          : "bg-white text-gray-600 hover:bg-gray-50"
+      }`}
+      style={{
+        padding: window.innerWidth <= 640 ? "8px 12px" : "12px 24px",
+        fontSize: window.innerWidth <= 640 ? "14px" : "16px",
+      }}
+    >
+      <tab.icon className="w-5 h-5" />
+      {tab.label}
+    </button>
+  ))}
+</div>
+
 
               {/* Report Content */}
               <div className="bg-white rounded-2xl shadow-lg p-6">
@@ -652,25 +661,25 @@ const AdminDashboard = () => {
                 )}
               </div>
               <div className="space-y-8">
-              <div className="bg-white rounded-2xl shadow-lg p-6">
-              <h2 className="text-2xl font-bold mb-6">Make Anouncement</h2>
-              <div className="flex gap-4 mb-8">
-                  <input
-                    type="text"
-                    value={message}
-                    onChange={(e) => setMessage(e.target.value)}
-                    placeholder="Enter a Message"
-                    className="flex-1 px-4 py-2 border rounded-xl"
-                  />
-                  <button
-                    onClick={() => handleAnouncement(message)}
-                    className="px-6 py-2 bg-cyan-600 text-white rounded-xl hover:bg-cyan-700"
-                    //disabled={loading}
-                  >
-                    {/* {loading ? "Sending..." : "Send"} */}Send
-                  </button>
+                <div className="bg-white rounded-2xl shadow-lg p-6">
+                  <h2 className="text-2xl font-bold mb-6">Make Anouncement</h2>
+                  <div className="flex gap-4 mb-8">
+                    <input
+                      type="text"
+                      value={message}
+                      onChange={(e) => setMessage(e.target.value)}
+                      placeholder="Enter a Message"
+                      className="flex-1 px-4 py-2 border rounded-xl"
+                    />
+                    <button
+                      onClick={() => handleAnouncement(message)}
+                      className="px-6 py-2 bg-cyan-600 text-white rounded-xl hover:bg-cyan-700"
+                      //disabled={loading}
+                    >
+                      {/* {loading ? "Sending..." : "Send"} */}Send
+                    </button>
+                  </div>
                 </div>
-              </div>
               </div>
             </div>
           )}
