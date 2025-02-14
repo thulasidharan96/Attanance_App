@@ -3,13 +3,15 @@ import { Navigate } from "react-router-dom";
 import { logout, isAdminAuthentication } from "../service/Auth";
 import Header from "../component/Header";
 import Footer from "../component/Footer";
+import MessageComponent from "../component/MessageComponent";
+import PasswordReset from "../component/PasswordReset";
 import {
   CurrentAttendanceByDate,
   studentbyRegisterNo,
   getDepartmentReport,
   allData,
   searchUserByUserId,
-  postUserMessage,
+  userDelete,
 } from "../service/Api";
 import {
   ArrowPathIcon,
@@ -35,10 +37,11 @@ const AdminDashboard = () => {
   const [previewData, setPreviewData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [searchPerformed, setSearchPerformed] = useState(false);
-
   const [userId, setuserId] = useState("");
   const [foundUser, setFoundUser] = useState(null);
+  const [showMessageComponent, setShowMessageComponent] = useState(false);
   const [message, setMessage] = useState("");
+  const [showPasswordReset, setShowPasswordReset] = useState(false);
 
   useEffect(() => {
     fetchAttendanceData();
@@ -118,14 +121,29 @@ const AdminDashboard = () => {
 
   const getAttendanceStats = () => {
     let presentCount = 0;
+    let absentCount = 0;
     let leaveCount = 0;
 
     attendanceData?.forEach((item) => {
-      if (item.attendanceStatus === "present") presentCount++;
-      else if (item.attendanceStatus === "leave") leaveCount++;
+      switch (item.attendanceStatus) {
+        case "present":
+          presentCount++;
+          break;
+        case "absent":
+          absentCount++;
+          break;
+        default:
+          leaveCount++;
+          break;
+      }
     });
 
-    return { totalStudents: attendanceData.length, presentCount, leaveCount };
+    return {
+      totalStudents: attendanceData?.length || 0,
+      presentCount,
+      leaveCount,
+      absentCount,
+    };
   };
 
   const handleSearch = async (type) => {
@@ -185,7 +203,7 @@ const AdminDashboard = () => {
       const response = await searchUserByUserId(userId);
       // Access first item from array since response contains array with single user
       setFoundUser(response.data.records[0]);
-      console.log("Found user:", response.data.records[0]);
+      //console.log("Found user:", response.data.records[0]);
     } catch (error) {
       alert("User not found");
       setFoundUser(null);
@@ -194,37 +212,22 @@ const AdminDashboard = () => {
     }
   };
 
-  const handleEditUser = async (userId) => {
-    try {
-      // Implement your edit user logic here
-      alert("Edit user functionality to be implemented");
-    } catch (error) {
-      alert("Failed to edit user");
-    }
-  };
-
   const handleDeleteUser = async (userId) => {
     if (window.confirm("Are you sure you want to delete this user?")) {
       try {
-        // Implement your delete user logic here
-
-        alert("Delete user functionality to be implemented");
-        setFoundUser(null);
-        setuserId("");
+        const response = await userDelete(userId);
+        if (response.message == "User deleted") {
+          alert("User deleted successfully");
+          setuserId("");
+          setFoundUser(null);
+        } else {
+          alert("Failed to delete user");
+          setuserId("");
+          setFoundUser(null);
+        }
       } catch (error) {
         alert("Failed to delete user");
       }
-    }
-  };
-
-  const handleMessageUser = async (userId) => {
-    try {
-      const response = await postUserMessage(userId, setMessage);
-      console.log("Message sent successfully:", response);
-      console.log("Message:", message);
-      alert("Send message functionality to be implemented");
-    } catch (error) {
-      alert("Failed to send message");
     }
   };
 
@@ -236,31 +239,35 @@ const AdminDashboard = () => {
     }
   };
 
-  const renderPreviewTable = (data) => (
-    <div className="bg-white rounded-2xl shadow-lg p-2 mt-2">
-      <div className="flex justify-between items-center mb-1">
-        <h3 className="text-xl font-semibold">Today Attendance Report</h3>
-        <button
-          onClick={() => {
-            const filename = `attendance_report_${
-              new Date().toISOString().split("T")[0]
-            }.csv`;
-            const headers = "Date,Name,Register Number,Department,Status\n";
-            const csvData = data
-              .map(
-                (item) =>
-                  `${item.dateOnly},${item.name},${item.registrationNumber},${item.department},${item.attendanceStatus}`
-              )
-              .join("\n");
+  const downloadCSV = (data) => {
+    const filename = `attendance_report_${
+      new Date().toISOString().split("T")[0]
+    }.csv`;
+    const headers = "Date,Name,Register Number,Department,Status\n";
+    const csvData = data
+      .map(
+        (item) =>
+          `${item.dateOnly},${item.name},${item.registrationNumber},${item.department},${item.attendanceStatus}`
+      )
+      .join("\n");
 
-            const blob = new Blob([headers + csvData], { type: "text/csv" });
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement("a");
-            link.href = url;
-            link.download = filename;
-            link.click();
-          }}
-          className="flex items-center gap-2 px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-xl"
+    const blob = new Blob([headers + csvData], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = filename;
+    link.click();
+  };
+
+  const renderPreviewTable = (data) => (
+    <div className="bg-white rounded-2xl shadow-lg p-4 mt-4 md:p-6 lg:p-8">
+      <div className="flex justify-between items-center mb-4">
+        <h3 className="text-lg font-semibold md:text-xl lg:text-2xl">
+          Attendance Report
+        </h3>
+        <button
+          onClick={() => downloadCSV(data)}
+          className="flex items-center gap-2 px-3 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg md:px-4 md:py-2 lg:px-5 lg:py-3"
         >
           <ArrowDownTrayIcon className="w-4 h-4" />
           Download CSV
@@ -270,19 +277,19 @@ const AdminDashboard = () => {
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
-              <th className="px-4 py-3 text-left text-sm font-medium text-gray-500 uppercase">
+              <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase md:px-4 md:py-3 lg:text-sm">
                 Date
               </th>
-              <th className="px-4 py-3 text-left text-sm font-medium text-gray-500 uppercase">
+              <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase md:px-4 md:py-3 lg:text-sm">
                 Name
               </th>
-              <th className="px-4 py-3 text-left text-sm font-medium text-gray-500 uppercase">
+              <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase md:px-4 md:py-3 lg:text-sm">
                 Reg No
               </th>
-              <th className="px-4 py-3 text-left text-sm font-medium text-gray-500 uppercase">
+              <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase md:px-4 md:py-3 lg:text-sm">
                 Department
               </th>
-              <th className="px-4 py-3 text-left text-sm font-medium text-gray-500 uppercase">
+              <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase md:px-4 md:py-3 lg:text-sm">
                 Status
               </th>
             </tr>
@@ -290,21 +297,27 @@ const AdminDashboard = () => {
           <tbody className="bg-white divide-y divide-gray-200">
             {data.map((item, index) => (
               <tr key={index} className="hover:bg-gray-50">
-                <td className="px-4 py-3 whitespace-nowrap">{item.dateOnly}</td>
-                <td className="px-4 py-3 whitespace-nowrap">{item.name}</td>
-                <td className="px-4 py-3 whitespace-nowrap">
+                <td className="px-2 py-2 whitespace-nowrap md:px-4 md:py-3">
+                  {item.dateOnly}
+                </td>
+                <td className="px-2 py-2 whitespace-nowrap md:px-4 md:py-3">
+                  {item.name}
+                </td>
+                <td className="px-2 py-2 whitespace-nowrap md:px-4 md:py-3">
                   {item.registrationNumber}
                 </td>
-                <td className="px-4 py-3 whitespace-nowrap">
+                <td className="px-2 py-2 whitespace-nowrap md:px-4 md:py-3">
                   {item.department}
                 </td>
-                <td className="px-4 py-3 whitespace-nowrap">
+                <td className="px-2 py-2 whitespace-nowrap md:px-4 md:py-3">
                   <span
-                    className={`px-2 py-1 text-sm rounded-full ${
+                    className={`px-2 py-1 text-xs rounded-full ${
                       item.attendanceStatus === "present"
-                        ? "bg-green-100 text-green-800"
-                        : "bg-red-100 text-red-800"
-                    }`}
+                        ? "bg-green-400 text-green-900"
+                        : item.attendanceStatus === "absent"
+                        ? "bg-red-400 text-red-900"
+                        : "bg-gray-400 text-gray-900"
+                    } md:text-sm lg:text-base`}
                   >
                     {item.attendanceStatus}
                   </span>
@@ -316,8 +329,11 @@ const AdminDashboard = () => {
       </div>
     </div>
   );
-  const { totalStudents, presentCount, leaveCount } = getAttendanceStats();
 
+  const { totalStudents, presentCount, leaveCount, absentCount } =
+    getAttendanceStats();
+
+  console.log("foundUser:", foundUser);
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-gray-100">
       <Header />
@@ -373,37 +389,47 @@ const AdminDashboard = () => {
 
           {activeTab === "attendance" && (
             <div className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="grid grid-cols-2 md:grid-cols-2 md:grid-rows-2 gap-2 md:gap-6">
                 {[
                   {
-                    title: "Total Students",
+                    title: "Attendance Taken",
                     value: totalStudents,
                     icon: UsersIcon,
                     color: "bg-blue-500",
                   },
                   {
-                    title: "Present Today",
+                    title: "Present",
                     value: presentCount,
                     icon: CheckCircleIcon,
                     color: "bg-green-500",
                   },
                   {
-                    title: "Leave Today",
-                    value: leaveCount,
+                    title: "Absent",
+                    value: absentCount,
                     icon: XCircleIcon,
                     color: "bg-red-500",
+                  },
+                  {
+                    title: "Leave",
+                    value: leaveCount,
+                    icon: CheckCircleIcon,
+                    color: "bg-gray-500",
                   },
                 ].map((stat, index) => (
                   <div
                     key={index}
-                    className={`rounded-2xl p-6 ${stat.color} text-white shadow-lg hover:shadow-xl transition-shadow`}
+                    className={`rounded-xl p-4 md:p-6 ${stat.color} text-white shadow-lg hover:shadow-xl transition-shadow`}
                   >
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-sm font-medium">{stat.title}</p>
-                        <p className="text-3xl font-bold mt-2">{stat.value}</p>
+                        <p className="text-xs md:text-sm font-medium">
+                          {stat.title}
+                        </p>
+                        <p className="text-xl md:text-3xl font-bold mt-1 md:mt-2">
+                          {stat.value}
+                        </p>
                       </div>
-                      <stat.icon className="w-12 h-12 opacity-20" />
+                      <stat.icon className="w-8 h-8 md:w-12 md:h-12 opacity-20" />
                     </div>
                   </div>
                 ))}
@@ -425,39 +451,39 @@ const AdminDashboard = () => {
           {activeTab === "reports" && (
             <div className="space-y-8">
               {/* Report Type Tabs */}
-<div className="flex justify-center space-x-4 mb-8">
-  {[
-    {
-      id: "regNo",
-      label: "Register Number",
-      icon: UserCircleIcon,
-    },
-    {
-      id: "department",
-      label: "Department",
-      icon: AcademicCapIcon,
-    },
-    { id: "dateRange", label: "All Data", icon: ClockIcon },
-  ].map((tab) => (
-    <button
-      key={tab.id}
-      onClick={() => setReportTab(tab.id)}
-      className={`flex items-center gap-2 px-6 py-3 rounded-xl font-medium ${
-        reportTab === tab.id
-          ? "bg-cyan-600 text-white"
-          : "bg-white text-gray-600 hover:bg-gray-50"
-      }`}
-      style={{
-        padding: window.innerWidth <= 640 ? "8px 12px" : "12px 24px",
-        fontSize: window.innerWidth <= 640 ? "14px" : "16px",
-      }}
-    >
-      <tab.icon className="w-5 h-5" />
-      {tab.label}
-    </button>
-  ))}
-</div>
-
+              <div className="flex justify-center space-x-4 mb-8">
+                {[
+                  {
+                    id: "regNo",
+                    label: "Register Number",
+                    icon: UserCircleIcon,
+                  },
+                  {
+                    id: "department",
+                    label: "Department",
+                    icon: AcademicCapIcon,
+                  },
+                  { id: "dateRange", label: "All Data", icon: ClockIcon },
+                ].map((tab) => (
+                  <button
+                    key={tab.id}
+                    onClick={() => setReportTab(tab.id)}
+                    className={`flex items-center gap-2 px-6 py-3 rounded-xl font-medium ${
+                      reportTab === tab.id
+                        ? "bg-cyan-600 text-white"
+                        : "bg-white text-gray-600 hover:bg-gray-50"
+                    }`}
+                    style={{
+                      padding:
+                        window.innerWidth <= 640 ? "8px 12px" : "12px 24px",
+                      fontSize: window.innerWidth <= 640 ? "14px" : "16px",
+                    }}
+                  >
+                    <tab.icon className="w-5 h-5" />
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
 
               {/* Report Content */}
               <div className="bg-white rounded-2xl shadow-lg p-6">
@@ -621,25 +647,28 @@ const AdminDashboard = () => {
                             {foundUser.department}
                           </p>
                           <p className="flex items-center gap-2">
-                            <span className="font-medium">ID:</span>{" "}
-                            {foundUser._id}
+                            <span className="font-medium">RegNo:</span>{" "}
+                            {foundUser.RegisterNumber}
                           </p>
                         </div>
                       </div>
 
                       <div className="flex flex-col gap-3">
                         <button
-                          onClick={() => handleEditUser(foundUser._id)}
+                          onClick={() => setShowPasswordReset(true)}
                           className="px-6 py-2 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition-colors"
                         >
-                          Edit User
+                          Reset Password
                         </button>
                         <button
-                          onClick={() => handleMessageUser(foundUser._id)}
-                          className="px-6 py-2 bg-yellow-500 text-white rounded-xl hover:bgyellow-600 transition-colors"
+                          onClick={() => {
+                            setShowMessageComponent(true);
+                          }}
+                          className="px-6 py-2 bg-yellow-500 text-white rounded-xl hover:bg-yellow-600 transition-colors"
                         >
                           Send Message
                         </button>
+
                         <button
                           onClick={() => handleDeleteUser(foundUser._id)}
                           className="px-6 py-2 bg-red-500 text-white rounded-xl hover:bg-red-600 transition-colors"
@@ -655,6 +684,18 @@ const AdminDashboard = () => {
                         >
                           Clear
                         </button>
+                        {showMessageComponent && (
+                          <MessageComponent
+                            onClose={() => setShowMessageComponent(false)}
+                            clientId={foundUser._id}
+                          />
+                        )}
+                        {showPasswordReset && foundUser?._id && (
+                          <PasswordReset
+                            onClose={() => setShowPasswordReset(false)}
+                            clientId={foundUser._id}
+                          />
+                        )}
                       </div>
                     </div>
                   </div>

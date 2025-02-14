@@ -143,7 +143,7 @@ const DashBoard = () => {
   const handleClick = async () => {
     setProcessing(true);
     try {
-      const attendanceStatus = isWithinLocation ? "present" : "leave";
+      const attendanceStatus = isWithinLocation ? "present" : "absent";
       const source = axios.CancelToken.source();
       setTimeout(() => {
         source.cancel("Timeout exceeded");
@@ -157,7 +157,11 @@ const DashBoard = () => {
         const statusMessage = isWithinLocation
           ? "Present marked successfully!"
           : "Absent marked successfully!";
-        showNotification(statusMessage, "success");
+        console.log(statusMessage);
+        showNotification(
+          statusMessage,
+          statusMessage === "Present marked successfully!" ? "success" : "error"
+        );
         setAttendanceUpdated((prev) => !prev);
       }
     } catch (error) {
@@ -223,6 +227,13 @@ const DashBoard = () => {
       } catch (error) {
         if (axios.isCancel(error)) {
           showNotification("Request timed out", "error");
+        } else if (
+          error.response &&
+          error.response.data &&
+          error.response.data.message ===
+            "No valid entry found for provided userId"
+        ) {
+          showNotification("No valid entry found", "error");
         } else {
           console.error("Failed to fetch messages:", error);
           showNotification("Failed to fetch notifications", "error");
@@ -246,7 +257,7 @@ const DashBoard = () => {
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-gray-100">
       {notification && <Notification {...notification} />}
       <Header />
-      <main className="flex-grow p-4">
+      <main className="flex-grow p-3">
         <div className="max-w-7xl mx-auto">
           <div className="flex md:flex-row justify-between items-start md:items-center mb-8 gap-4">
             <div>
@@ -276,9 +287,9 @@ const DashBoard = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+          <div className=" mb-4 justify-center align-center">
             <div className="bg-white rounded-2xl shadow-lg p-4">
-              <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+              <h2 className="text-xl font-semibold mb-4 flex items-center gap-2 text-center">
                 <UserCircleIcon className="w-6 h-6 text-cyan-600" />
                 Student Information
               </h2>
@@ -296,13 +307,14 @@ const DashBoard = () => {
               </div>
             </div>
           </div>
-          <div className="flex md:flex-row justify-between items-center">
-            <div className="bg-white rounded-2xl shadow-lg p-4 mb-4 md:w-auto">
-              <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-                <MapPinIcon className="w-6 h-6 text-cyan-600" />
+
+          <div className="flex justify-between md:justify-between items-center mb-4 gap-2 ">
+            <div className="flex flex-col w-1/2 md:w-1/2 bg-white rounded-2xl shadow-lg p-4 ">
+              <h2 className="flex items-center gap-2 text-xl font-semibold mb-4">
+                <MapPinIcon className="w-4 h-4 text-cyan-600" />
                 Location Status
               </h2>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center">
                 <span
                   className={`inline-flex items-center px-4 py-2 rounded-lg ${
                     isWithinLocation
@@ -311,18 +323,17 @@ const DashBoard = () => {
                   }`}
                 >
                   {isWithinLocation ? (
-                    <CheckCircleIcon className="w-5 h-5 mr-2" />
+                    <CheckCircleIcon className="w-4 h-4 mr-2" />
                   ) : (
-                    <XCircleIcon className="w-5 h-5 mr-2" />
+                    <XCircleIcon className="w-4 h-4 mr-2" />
                   )}
-                  {isWithinLocation
-                    ? "Within Campus Range"
-                    : "Outside Campus Range"}
+                  {isWithinLocation ? "Within Campus" : "Outside Campus"}
                 </span>
               </div>
             </div>
-            {/* Leave Request Section */}
-            <LeaveForm className="w-full md:w-auto" />
+            <div className="flex flex-col w-1/2 md:w-1/2 bg-white rounded-2xl shadow-lg">
+              <LeaveForm />
+            </div>
           </div>
 
           <div className="bg-white rounded-2xl shadow-lg overflow-hidden mb-8">
@@ -358,12 +369,12 @@ const DashBoard = () => {
                           </td>
                           <td className="px-4 py-2 whitespace-nowrap">
                             <span
-                              className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
+                              className={`px-2 py-1 text-sm rounded-full ${
                                 user.attendanceStatus === "present"
-                                  ? "bg-green-100 text-green-800"
-                                  : user.attendanceStatus === "late"
-                                  ? "bg-yellow-100 text-yellow-800"
-                                  : "bg-red-100 text-red-800"
+                                  ? "bg-green-400 text-green-900"
+                                  : user.attendanceStatus === "absent"
+                                  ? "bg-red-400 text-red-900"
+                                  : "bg-gray-400 text-gray-900"
                               }`}
                             >
                               {user.attendanceStatus}
