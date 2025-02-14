@@ -1,9 +1,8 @@
 import React, { useState } from 'react';
-import { MapPinIcon, CheckCircleIcon, XCircleIcon } from '@heroicons/react/24/outline';
 
 const YourComponent = () => {
   const [showLeaveForm, setShowLeaveForm] = useState(false);
-  const isWithinLocation = true; // Example value, replace with your actual logic
+ // Example value, replace with your actual logic
 
   return (
     <div>
