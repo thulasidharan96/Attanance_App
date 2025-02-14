@@ -216,7 +216,7 @@ const AdminDashboard = () => {
     if (window.confirm("Are you sure you want to delete this user?")) {
       try {
         const response = await userDelete(userId);
-        if (response.message == "User deleted") {
+        if (response.message === "User deleted") {
           alert("User deleted successfully");
           setuserId("");
           setFoundUser(null);
