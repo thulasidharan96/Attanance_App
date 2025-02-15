@@ -252,7 +252,7 @@ export const LeaveRequest = async (data) => {
   }
   try {
     const response = await axios.post(
-      `http://localhost:10000/user/leave`,
+      `https://rest-api-hp0n.onrender.com/user/leave`,
       {
         StartDate: data.startDate,
         EndDate: data.endDate,
