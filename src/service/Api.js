@@ -247,6 +247,8 @@ export const userDelete = async (userId) => {
 // Leave Request
 export const LeaveRequest = async (data) => {
   const token = localStorage.getItem("authToken");
+  const RegisterNumber = localStorage.getItem("RegisterNumber");
+
   if (!token) {
     throw new Error("Missing authentication token");
   }
@@ -256,6 +258,7 @@ export const LeaveRequest = async (data) => {
       {
         StartDate: data.startDate,
         EndDate: data.endDate,
+        RegisterNumber: RegisterNumber,
         Reason: data.reason,
         userId: data.userId,
       },
