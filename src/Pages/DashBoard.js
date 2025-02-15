@@ -308,9 +308,9 @@ const DashBoard = () => {
             </div>
           </div>
 
-          <div className="flex justify-between md:justify-between items-center mb-4 gap-2 ">
-            <div className="flex flex-col w-1/2 md:w-1/2 bg-white rounded-2xl shadow-lg p-4 ">
-              <h2 className="flex items-center gap-2 text-xl font-semibold mb-4">
+          <div className="flex justify-between md:justify-between items-center mb-4 gap-2">
+            <div className="flex flex-col h-full w-1/2 md:w-1/2 bg-white rounded-2xl shadow-lg p-4 ">
+              <h2 className="flex items-center gap-2 text-xl font-semibold mb-3">
                 <MapPinIcon className="w-4 h-4 text-cyan-600" />
                 Location Status
               </h2>
@@ -331,8 +331,8 @@ const DashBoard = () => {
                 </span>
               </div>
             </div>
-            <div className="flex flex-col w-1/2 md:w-1/2 bg-white rounded-2xl shadow-lg">
-              <LeaveForm />
+            <div className="flex flex-col h-full w-1/2 md:w-1/2 bg-white rounded-2xl shadow-lg p-4">
+              <LeaveForm userId={userId} />
             </div>
           </div>
 
@@ -438,6 +438,7 @@ const DashBoard = () => {
         <NotificationCard
           notifications={notifications}
           onClose={toggleNotificationCard}
+          userId={userId}
         />
       )}
     </div>
