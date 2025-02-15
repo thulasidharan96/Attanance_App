@@ -292,7 +292,7 @@ export const getRecentLeaveStatus = async (userId) => {
 
   try {
     const response = await axios.get(
-      `http://localhost:10000/attendance/leave/${userId}`,
+      `https://rest-api-hp0n.onrender.com/attendance/leave/${userId}`,
       {
         headers: {
           Authorization: `Bearer ${token}`,
