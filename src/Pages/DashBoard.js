@@ -8,6 +8,7 @@ import {
 import Header from "../component/Header";
 import Footer from "../component/Footer";
 import LeaveForm from "../component/LeaveForm";
+import LeaveStatus from "../component/LeaveStatus";
 import { AttendanceApi, UserApi, getUserMessages } from "../service/Api";
 import {
   ArrowPathIcon,
@@ -308,8 +309,9 @@ const DashBoard = () => {
             </div>
           </div>
 
-          <div className="flex justify-between md:justify-between items-center mb-4 gap-2">
-            <div className="flex flex-col h-full w-1/2 md:w-1/2 bg-white rounded-2xl shadow-lg p-4 ">
+          <div className="flex flex-row md:flex-row justify-between items-stretch gap-4 mb-4">
+            {/* Location Status */}
+            <div className="flex flex-col justify-between h-full w-full md:w-1/2 bg-white rounded-2xl shadow-lg p-4">
               <h2 className="flex items-center gap-2 text-xl font-semibold mb-3">
                 <MapPinIcon className="w-4 h-4 text-cyan-600" />
                 Location Status
@@ -331,8 +333,13 @@ const DashBoard = () => {
                 </span>
               </div>
             </div>
-            <div className="flex flex-col h-full w-1/2 md:w-1/2 bg-white rounded-2xl shadow-lg p-4">
-              <LeaveForm userId={userId} />
+
+            {/* Leave Form & Status */}
+            <div className="flex flex-col justify-between h-full w-full md:w-1/2 bg-white rounded-2xl shadow-lg p-4">
+              <div className="flex flex-col md:flex-col justify-between w-full gap-2">
+                <LeaveForm userId={userId} />
+                <LeaveStatus userId={userId} />
+              </div>
             </div>
           </div>
 

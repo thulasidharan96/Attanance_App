@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { DocumentPlusIcon, EyeIcon } from "@heroicons/react/24/outline";
+import { DocumentPlusIcon } from "@heroicons/react/24/outline";
 import { LeaveRequest } from "../service/Api";
 
 const YourComponent = ({ userId }) => {
@@ -35,26 +35,14 @@ const YourComponent = ({ userId }) => {
     }
   };
 
-  const showLeaveRequestStatus = () => {
-    console.log("Show Leave Request Status");
-    console.log("User ID:", userId);
-  };
-
   return (
     <div>
-      <h2 className="gap-2 text-xl font-semibold">Leave Request</h2>
       <div className="flex flex-row gap-2">
         <button
-          className="mt-4 bg-blue-500 text-white px-4 py-2 rounded-lg flex items-center justify-center sm:justify-start"
+          className="bg-blue-500 text-white px-4 py-2 rounded-lg flex items-center justify-center sm:justify-start"
           onClick={() => setShowLeaveForm(true)}
         >
           <DocumentPlusIcon className="h-5 w-5 mr-2" />
-        </button>
-        <button
-          className="mt-4 bg-green-500 text-white px-4 py-2 rounded-lg flex items-center justify-center sm:justify-start"
-          onClick={showLeaveRequestStatus}
-        >
-          <EyeIcon className="h-5 w-5 mr-2" />
         </button>
       </div>
 
@@ -70,7 +58,6 @@ const YourComponent = ({ userId }) => {
                 id="startDate"
                 name="startDate"
                 className="w-full mb-4 p-2 border rounded-lg"
-                min="2025-02-15"
               />
               <br />
               <label htmlFor="endDate">End Date:</label>

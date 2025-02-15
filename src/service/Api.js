@@ -282,4 +282,36 @@ export const LeaveRequest = async (data) => {
   }
 };
 
-//Leave Status
+//Get Recent Leave Status
+export const getRecentLeaveStatus = async (userId) => {
+  const token = localStorage.getItem("authToken");
+
+  if (!token) {
+    throw new Error("Missing authentication token");
+  }
+
+  try {
+    const response = await axios.get(
+      `http://localhost:10000/attendance/leave/${userId}`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+    return response.data;
+  } catch (error) {
+    if (error.response) {
+      // Handle known HTTP errors
+      console.error(`Error (${error.response.status}): ${error.response.data}`);
+    } else if (error.request) {
+      // Network error or no response from server
+      console.error("Network error:", error.request);
+    } else {
+      // Handle other errors (axios setup, etc.)
+      console.error("Unexpected error:", error.message);
+    }
+    throw error;
+  }
+};
