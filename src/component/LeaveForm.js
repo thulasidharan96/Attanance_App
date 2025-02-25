@@ -42,7 +42,7 @@ const YourComponent = ({ userId }) => {
           className="bg-blue-500 text-white px-4 py-2 rounded-lg flex items-center justify-center sm:justify-start"
           onClick={() => setShowLeaveForm(true)}
         >
-          <DocumentPlusIcon className="h-5 w-5 mr-2" />
+          <DocumentPlusIcon className="h-5 w-5 mr-2 ml-2" />
         </button>
       </div>
 

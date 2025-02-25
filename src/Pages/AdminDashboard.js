@@ -5,6 +5,8 @@ import Header from "../component/Header";
 import Footer from "../component/Footer";
 import MessageComponent from "../component/MessageComponent";
 import PasswordReset from "../component/PasswordReset";
+import AdminLeaveStatus from "../component/AdminLeaveStatus";
+// import Table from "../component/Table";
 import {
   CurrentAttendanceByDate,
   studentbyRegisterNo,
@@ -333,7 +335,7 @@ const AdminDashboard = () => {
   const { totalStudents, presentCount, leaveCount, absentCount } =
     getAttendanceStats();
 
-  console.log("foundUser:", foundUser);
+  // console.log("foundUser:", foundUser);
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-gray-100">
       <Header />
@@ -350,6 +352,8 @@ const AdminDashboard = () => {
                   ? "Today's Attendance Overview"
                   : activeTab === "reports"
                   ? "Student Reports Management"
+                  : activeTab === "Leave Request"
+                  ? "Leave Management"
                   : "User Management"}
               </p>
             </div>
@@ -362,29 +366,32 @@ const AdminDashboard = () => {
             </button>
           </div>
 
-          <div className="flex justify-center space-x-4 mb-8">
-            {["attendance", "reports", "Setting"].map((tab) => (
-              <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
-                className={`flex items-center gap-2 px-6 py-3 rounded-xl font-medium ${
-                  activeTab === tab
-                    ? "bg-cyan-600 text-white"
-                    : "bg-white text-gray-600 hover:bg-gray-50"
-                }`}
-                style={{
-                  padding: window.innerWidth <= 640 ? "8px 12px" : "12px 24px",
-                  fontSize: window.innerWidth <= 640 ? "14px" : "16px",
-                }}
-              >
-                {tab === "attendance" ? (
-                  <TableCellsIcon className="w-5 h-5" />
-                ) : (
-                  <DocumentMagnifyingGlassIcon className="w-5 h-5" />
-                )}
-                {tab.charAt(0).toUpperCase() + tab.slice(1)}
-              </button>
-            ))}
+          <div className="flex justify-center space-x-3 mb-8">
+            {["attendance", "reports", "Leave Request", "Setting"].map(
+              (tab) => (
+                <button
+                  key={tab}
+                  onClick={() => setActiveTab(tab)}
+                  className={`flex items-center px-6 py-5 rounded-xl font-medium transition-all ${
+                    activeTab === tab
+                      ? "bg-cyan-600 text-white"
+                      : "bg-white text-gray-600 hover:bg-gray-50"
+                  }`}
+                  style={{
+                    padding:
+                      window.innerWidth <= 640 ? "8px 12px" : "12px 24px",
+                    fontSize: window.innerWidth <= 640 ? "14px" : "16px",
+                  }}
+                >
+                  {tab === "attendance" ? (
+                    <TableCellsIcon className="w-5 h-5" />
+                  ) : (
+                    <DocumentMagnifyingGlassIcon className="w-5 h-5" />
+                  )}
+                  {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                </button>
+              )
+            )}
           </div>
 
           {activeTab === "attendance" && (
@@ -602,6 +609,16 @@ const AdminDashboard = () => {
                   previewData.length > 0 &&
                   renderPreviewTable(previewData)}
               </div>
+            </div>
+          )}
+          {activeTab === "Leave Request" && (
+            <div className="space-y-8 flex flex-col justify-center">
+              <div className="bg-gray-200 rounded-2xl shadow-lg p-2">
+                <h2 className="text-2xl font-bold flex items-center justify-center">
+                  Leave Management
+                </h2>
+              </div>
+                <AdminLeaveStatus />
             </div>
           )}
           {activeTab === "Setting" && (

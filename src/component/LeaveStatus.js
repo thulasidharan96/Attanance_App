@@ -54,10 +54,10 @@ const LeaveStatus = ({ userId }) => {
           setShowLeaveStatus(true);
           fetchLeaveStatus();
         }}
-        className="bg-green-500 text-white px-4 py-2 rounded-lg gap-2 flex items-center justify-center sm:justify-start shadow-md hover:bg-green-600 transition-all"
+        className="bg-green-500 text-white px-4 py-2 rounded-lg gap-2 flex items-center justify-center sm:justify-center shadow-md hover:bg-green-600 transition-all"
         disabled={loading}
       >
-        <EyeIcon className="h-5 w-5 mr-2" />
+        <EyeIcon className="h-5 w-5 mr-2 ml-2" />
         {loading ? "Loading..." : ""}
       </button>
 

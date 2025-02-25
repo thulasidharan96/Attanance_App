@@ -318,3 +318,37 @@ export const getRecentLeaveStatus = async (userId) => {
     throw error;
   }
 };
+
+// Get Pending Leave Requests of all Users
+export const getAllPendingLeaveRequests = async () => {
+  const token = localStorage.getItem("authToken");
+
+  if (!token) {
+    throw new Error("Missing authentication token");
+  }
+
+  try {
+    const response = await axios.get(
+      `https://rest-api-hp0n.onrender.com/admin/leave/pending`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+    return response.data;
+  } catch (error) {
+    if (error.response) {
+      // Handle known HTTP errors
+      console.error(`Error (${error.response.status}): ${error.response.data}`);
+    } else if (error.request) {
+      // Network error or no response from server
+      console.error("Network error:", error.request);
+    } else {
+      // Handle other errors (axios setup, etc.)
+      console.error("Unexpected error:", error.message);
+    }
+    throw error;
+  }
+};
