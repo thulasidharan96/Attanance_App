@@ -21,17 +21,42 @@ const YourComponent = ({ userId }) => {
     };
 
     try {
+      // Validate required fields
+      if (
+        !leaveRequestData.startDate ||
+        !leaveRequestData.endDate ||
+        !leaveRequestData.reason
+      ) {
+        alert("All fields (StartDate, EndDate, Reason, userId) are required.");
+        return;
+      }
+
       const response = await LeaveRequest(leaveRequestData);
       console.log("Response:", response);
+
       if (response.message === "Leave request submitted successfully.") {
         alert("Leave request submitted successfully!");
         setShowLeaveForm(false);
+      } else if (
+        response.error === "You already have a pending leave request."
+      ) {
+        alert("You already have a pending leave request.");
+        console.log(response.error);
+      } else if (response.error) {
+        alert(`Error: ${response.error}`);
       } else {
         alert("Failed to submit leave request. Please try again.");
-        setShowLeaveForm(false);
       }
     } catch (error) {
-      console.error("Error submitting leave request:", error);
+      if (
+        error.response?.data?.error ===
+        "You already have a pending leave request."
+      ) {
+        alert("You already have a pending leave request.");
+      } else {
+        console.error("Error submitting leave request:", error);
+        alert("An unexpected error occurred. Please try again later.");
+      }
     }
   };
 

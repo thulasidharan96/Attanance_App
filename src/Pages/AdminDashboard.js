@@ -379,8 +379,8 @@ const AdminDashboard = () => {
                   }`}
                   style={{
                     padding:
-                      window.innerWidth <= 640 ? "8px 12px" : "12px 24px",
-                    fontSize: window.innerWidth <= 640 ? "14px" : "16px",
+                      window.innerWidth <= 640 ? "8px 10px" : "12px 22px",
+                    fontSize: window.innerWidth <= 640 ? "12px" : "14px",
                   }}
                 >
                   {tab === "attendance" ? (

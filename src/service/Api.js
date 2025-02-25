@@ -352,3 +352,33 @@ export const getAllPendingLeaveRequests = async () => {
     throw error;
   }
 };
+
+// Approve or Reject Leave Request
+export const updateLeaveRequest = async (id, status) => {
+  const token = localStorage.getItem("authToken");
+
+  if (!token) {
+    throw new Error("Missing authentication token");
+  }
+
+  try {
+    const response = await axios.patch(
+      `https://rest-api-hp0n.onrender.com/admin/leave/${id}`,
+      { status },
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error updating leave request:", error);
+
+    if (error.response) {
+      // Server responded with an error status
+      throw new Error(
+        error.response.data.error || "Failed to update leave request."
+      );
+    } else {
+      // Network error or request was not completed
+      throw new Error("Network error. Please try again later.");
+    }
+  }
+};
