@@ -63,6 +63,7 @@ const AdminLeaveStatus = () => {
               <tr className="text-left">
                 <th className="border px- py-2 md:px-4 md:py-3">Name</th>
                 <th className="border px-3 py-2 md:px-4 md:py-3">Reg No</th>
+                <th className="border px-3 py-2 md:px-4 md:py-3">Dept</th>
                 <th className="border px-3 py-2 md:px-4 md:py-3">Reason</th>
                 <th className="border px-3 py-2 md:px-4 md:py-3">Start Date</th>
                 <th className="border px-3 py-2 md:px-4 md:py-3">End Date</th>
@@ -81,6 +82,9 @@ const AdminLeaveStatus = () => {
                   </td>
                   <td className="border px-3 py-2 md:px-4 md:py-3">
                     {item.user?.RegisterNumber || item.RegisterNumber}
+                  </td>
+                  <td className="border px-3 py-2 md:px-4 md:py-3">
+                    {item.user?.Department || item.Department}
                   </td>
                   <td className="border px-3 py-2 md:px-4 md:py-3 truncate max-w-xs text-gray-600">
                     {item.Reason}

@@ -261,6 +261,7 @@ export const LeaveRequest = async (data) => {
         RegisterNumber: RegisterNumber,
         Reason: data.reason,
         userId: data.userId,
+        Department: data.dept,
       },
       {
         headers: {

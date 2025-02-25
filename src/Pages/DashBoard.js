@@ -99,6 +99,7 @@ const DashBoard = () => {
   const [registerNumber] = useState(
     localStorage.getItem("RegisterNumber") || ""
   );
+  const [department] = useState(localStorage.getItem("department") || "");
   const [showNotificationCard, setShowNotificationCard] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const [attendanceUpdated, setAttendanceUpdated] = useState(false);
@@ -295,30 +296,34 @@ const DashBoard = () => {
                 Student Information
               </h2>
               <div className="space-y-2">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-4">
                   <span className="font-medium text-gray-700">Name:</span>
                   <span className="text-gray-800">{userName}</span>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-4">
                   <span className="font-medium text-gray-700">
                     Register Number:
                   </span>
                   <span className="text-gray-800">{registerNumber}</span>
                 </div>
+                <div className="flex items-center gap-4">
+                  <span className="font-medium text-gray-700">Department:</span>
+                  <span className="text-gray-800">{department}</span>
+                </div>
               </div>
             </div>
           </div>
 
-          <div className="flex flex-row md:flex-row justify-between items-stretch gap-4 mb-4">
+          <div className="flex flex-row md:flex-row justify-between items-stretch gap-4 mb-4 bg-gray-100 rounded-2xl">
             {/* Location Status */}
-            <div className="flex flex-col justify-between h-full w-full md:w-1/2 bg-white rounded-2xl shadow-lg p-4">
+            <div className="flex flex-col justify-between h-full w-full md:w-1/2 bg-white rounded-2xl shadow-lg p-4 gap-1">
               <h2 className="flex items-center gap-2 text-xl font-semibold mb-3">
                 <MapPinIcon className="w-4 h-4 text-cyan-600" />
                 Location Status
               </h2>
               <div className="flex items-center">
                 <span
-                  className={`inline-flex items-center px-4 py-2 rounded-lg ${
+                  className={`inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium ${
                     isWithinLocation
                       ? "bg-green-100 text-green-800"
                       : "bg-red-100 text-red-800"
@@ -337,7 +342,7 @@ const DashBoard = () => {
             {/* Leave Form & Status */}
             <div className="flex flex-col justify-between h-full w-full md:w-1/2 bg-white rounded-2xl shadow-lg p-4">
               <div className="flex flex-col md:flex-col justify-between w-full gap-2">
-                <LeaveForm userId={userId} />
+                <LeaveForm userId={userId} dept= {department} />
                 <LeaveStatus userId={userId} />
               </div>
             </div>

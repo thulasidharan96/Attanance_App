@@ -2,19 +2,21 @@ import React, { useState } from "react";
 import { DocumentPlusIcon } from "@heroicons/react/24/outline";
 import { LeaveRequest } from "../service/Api";
 
-const YourComponent = ({ userId }) => {
+const YourComponent = ({ userId, dept }) => {
   const [showLeaveForm, setShowLeaveForm] = useState(false);
 
   const handleSubmit = async (event) => {
     event.preventDefault();
     console.log("Leave Application Submitted");
     console.log("User ID:", userId);
+    console.log("Department:", dept);
     console.log("Start Date:", document.getElementById("startDate").value);
     console.log("End Date:", document.getElementById("endDate").value);
     console.log("Reason:", document.getElementById("reason").value);
 
     const leaveRequestData = {
       userId: userId,
+      dept: dept,
       startDate: document.getElementById("startDate").value,
       endDate: document.getElementById("endDate").value,
       reason: document.getElementById("reason").value,
