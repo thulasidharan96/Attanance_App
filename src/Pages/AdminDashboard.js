@@ -6,6 +6,7 @@ import Footer from "../component/Footer";
 import MessageComponent from "../component/MessageComponent";
 import PasswordReset from "../component/PasswordReset";
 import AdminLeaveStatus from "../component/AdminLeaveStatus";
+import MathVerify from "../component/MathVerify";
 // import Table from "../component/Table";
 import {
   CurrentAttendanceByDate,
@@ -46,6 +47,7 @@ const AdminDashboard = () => {
   const [message, setMessage] = useState("");
   const [title, setTitle] = useState("");
   const [showPasswordReset, setShowPasswordReset] = useState(false);
+  const [showDeleteVerification, setShowDeleteVerification] = useState(false);
 
   useEffect(() => {
     fetchAttendanceData();
@@ -216,22 +218,23 @@ const AdminDashboard = () => {
     }
   };
 
-  const handleDeleteUser = async (userId) => {
-    if (window.confirm("Are you sure you want to delete this user?")) {
-      try {
-        const response = await userDelete(userId);
-        if (response.message === "User deleted") {
-          alert("User deleted successfully");
-          setuserId("");
-          setFoundUser(null);
-        } else {
-          alert("Failed to delete user");
-          setuserId("");
-          setFoundUser(null);
-        }
-      } catch (error) {
+  const handleDeleteUser = async (userId, mathAnswer) => {
+    try {
+      // Optionally, pass mathAnswer to your API if needed.
+      const response = await userDelete(userId, mathAnswer);
+      if (
+        response.message === "User and associated attendance records deleted"
+      ) {
+        alert("User deleted successfully");
+        setuserId("");
+        setFoundUser(null);
+      } else {
         alert("Failed to delete user");
+        setuserId("");
+        setFoundUser(null);
       }
+    } catch (error) {
+      alert("Failed to delete user");
     }
   };
 
@@ -635,7 +638,7 @@ const AdminDashboard = () => {
                   Leave Management
                 </h2>
               </div>
-                <AdminLeaveStatus />
+              <AdminLeaveStatus />
             </div>
           )}
           {activeTab === "Setting" && (
@@ -703,8 +706,9 @@ const AdminDashboard = () => {
                           Send Message
                         </button>
 
+                        {/* Updated Delete Button: opens math verification first */}
                         <button
-                          onClick={() => handleDeleteUser(foundUser._id)}
+                          onClick={() => setShowDeleteVerification(true)}
                           className="px-6 py-2 bg-red-500 text-white rounded-xl hover:bg-red-600 transition-colors"
                         >
                           Delete User
@@ -724,10 +728,10 @@ const AdminDashboard = () => {
                             clientId={foundUser._id}
                           />
                         )}
-                        {showPasswordReset && foundUser?._id && (
+                        {showPasswordReset && foundUser?.RegisterNumber && (
                           <PasswordReset
                             onClose={() => setShowPasswordReset(false)}
-                            clientId={foundUser._id}
+                            clientId={foundUser.RegisterNumber}
                           />
                         )}
                       </div>
@@ -768,6 +772,16 @@ const AdminDashboard = () => {
         </div>
       </main>
       <Footer />
+      {/* Conditionally render MathVerify for deletion */}
+      {showDeleteVerification && (
+        <MathVerify
+          onSuccess={(answer) => {
+            setShowDeleteVerification(false);
+            handleDeleteUser(foundUser._id, answer);
+          }}
+          onClose={() => setShowDeleteVerification(false)}
+        />
+      )}
     </div>
   );
 };

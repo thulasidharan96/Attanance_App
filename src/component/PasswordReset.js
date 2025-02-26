@@ -1,75 +1,140 @@
 import React, { useState } from "react";
+import { ShieldCheckIcon } from "@heroicons/react/24/outline";
+import { changePassword } from "../service/Api";
+import MathVerify from "../component/MathVerify";
 
 const generateRandomPassword = () => {
-  const length = 12;
+  const length = 16;
   const charset =
-    "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-  let password = "";
-  for (let i = 0, n = charset.length; i < length; ++i) {
-    password += charset.charAt(Math.floor(Math.random() * n));
-  }
-  return password;
+    "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+";
+  const randomValues = new Uint8Array(length);
+  window.crypto.getRandomValues(randomValues);
+
+  return Array.from(
+    randomValues,
+    (value) => charset[value % charset.length]
+  ).join("");
 };
 
-const PasswordReset = ({ onClose, clientId }) => {
-  const [password, setPassword] = useState("");
-  const [generated, setGenerated] = useState(false);
+const isValidPassword = (password) => {
+  return (
+    password.length >= 6 &&
+    /[A-Z]/.test(password) &&
+    /\d/.test(password) &&
+    /[!@#$%^&*()_+]/.test(password)
+  );
+};
+
+const PasswordReset = ({ onClose, initialPassword = "", clientId }) => {
+  const [password, setPassword] = useState(initialPassword);
+  const [loading, setLoading] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [mathVerified, setMathVerified] = useState(false);
+  const [mathAnswer, setMathAnswer] = useState(null);
 
   const handleGenerate = () => {
-    const newPassword = generateRandomPassword();
-    setPassword(newPassword);
-    setGenerated(true);
+    setPassword(generateRandomPassword());
+    setCopied(false);
   };
 
-  const handleConfirm = () => {
-    sendPassword(password, clientId);
-    onClose();
+  const handleCopy = () => {
+    navigator.clipboard.writeText(password);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
-  const sendPassword = (password, clientId) => {
-    console.log(`Password for user ${clientId}: ${password}`);
+  const handleConfirm = async () => {
+    if (!isValidPassword(password) || mathAnswer === null) {
+      console.error("Invalid password format or missing math verification.");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await changePassword(password, clientId, mathAnswer);
+      alert("Password reset successful!");
+      onClose();
+    } catch (error) {
+      console.error("Failed to reset password:", error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-50 p-4">
-      <div className="bg-white p-6 rounded-2xl shadow-lg w-full max-w-md mx-auto">
-        <h2 className="text-2xl font-semibold mb-4 text-center">
-          Reset Password
-        </h2>
-        <div className="flex flex-col items-center">
-          {generated ? (
-            <div className="bg-gray-100 p-3 rounded-lg w-full text-center text-lg font-mono mb-4 select-all">
-              {password}
+      {!mathVerified ? (
+        <MathVerify
+          onSuccess={(answer) => {
+            setMathVerified(true);
+            setMathAnswer(answer);
+          }}
+          onClose={onClose}
+        />
+      ) : (
+        <div className="bg-white p-6 rounded-2xl shadow-lg w-full max-w-md mx-auto">
+          <h2 className="text-2xl font-semibold mb-4 text-center">
+            Reset Password
+          </h2>
+
+          <div className="w-full">
+            <div className="relative w-full">
+              <input
+                type="text"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="border p-2 pr-20 rounded-lg w-full text-center text-lg font-mono"
+                placeholder="Enter or generate password"
+              />
+              {password && (
+                <button
+                  onClick={handleCopy}
+                  className="absolute right-12 top-1/2 transform -translate-y-1/2 text-sm bg-gray-200 px-2 py-1 rounded"
+                >
+                  {copied ? "Copied!" : "Copy"}
+                </button>
+              )}
+
+              <button
+                onClick={handleGenerate}
+                className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-blue-500 text-white p-2 rounded-lg hover:bg-blue-600 transition-colors"
+              >
+                <ShieldCheckIcon className="w-5 h-5" />
+              </button>
             </div>
-          ) : (
-            <p className="text-gray-600 text-sm text-center mb-4">
-              Click below to generate a new password
-            </p>
-          )}
-          <button
-            onClick={handleGenerate}
-            className="w-full mb-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
-          >
-            Generate Password
-          </button>
-          {generated && (
+
+            {!isValidPassword(password) && password.length > 0 && (
+              <p className="text-red-500 text-sm mt-2 text-center">
+                Password must have at least 6 characters, 1 uppercase letter, 1
+                number, and 1 special character.
+              </p>
+            )}
+
+            {password && (
+              <button
+                onClick={handleConfirm}
+                disabled={loading || !isValidPassword(password)}
+                className={`mt-4 w-full px-4 py-2 text-white rounded-lg transition-colors ${
+                  loading || !isValidPassword(password)
+                    ? "bg-gray-400"
+                    : "bg-green-500 hover:bg-green-600"
+                }`}
+              >
+                {loading ? "Processing..." : "Confirm Reset"}
+              </button>
+            )}
+          </div>
+
+          <div className="mt-4 flex justify-center">
             <button
-              onClick={handleConfirm}
-              className="w-full px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
+              onClick={onClose}
+              className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
             >
-              Confirm Reset
+              Cancel
             </button>
-          )}
+          </div>
         </div>
-        <div className="mt-4 flex justify-center">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
-          >
-            Cancel
-          </button>
-        </div>
-      </div>
+      )}
     </div>
   );
 };

@@ -448,3 +448,67 @@ export const getAnnouncement = async () => {
     throw error;
   }
 };
+
+// Password Change Function
+export const changePassword = async (password, registerNumber) => {
+  const token = localStorage.getItem("authToken");
+
+  if (!token) {
+    throw new Error("Missing authentication token");
+  }
+
+  try {
+    const response = await axios.patch(
+      "http://localhost:10000/admin/password",
+      { RegisterNumber: registerNumber, password }, // Corrected request body
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    return response.data;
+  } catch (error) {
+    if (error.response) {
+      // Handle known HTTP errors
+      console.error(`Error (${error.response.status}): ${error.response.data}`);
+    } else if (error.request) {
+      // Network error or no response from server
+      console.error("Network error:", error.request);
+    } else {
+      // Handle other errors (axios setup, etc.)
+      console.error("Unexpected error:", error.message);
+    }
+    throw error;
+  }
+};
+
+//get verify question
+export const getVerifyQuestion = async () => {
+  const token = localStorage.getItem("authToken");
+
+  if (!token) {
+    throw new Error("Missing authentication token");
+  }
+
+  try {
+    const response = await axios.get(
+      `http://localhost:10000/user/mathquestion`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+    return response.data;
+  } catch (error) {
+    if (error.response) {
+      // Handle known HTTP errors
+      console.error(`Error (${error.response.status}): ${error.response.data}`);
+    } else if (error.request) {
+      // Network error or no response from server
+      console.error("Network error:", error.request);
+    } else {
+      // Handle other errors (axios setup, etc.)
+      console.error("Unexpected error:", error.message);
+    }
+    throw error;
+  }
+};
