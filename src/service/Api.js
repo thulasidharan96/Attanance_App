@@ -459,7 +459,7 @@ export const changePassword = async (password, registerNumber) => {
 
   try {
     const response = await axios.patch(
-      "http://localhost:10000/admin/password",
+      "https://rest-api-hp0n.onrender.com/admin/password",
       { RegisterNumber: registerNumber, password }, // Corrected request body
       { headers: { Authorization: `Bearer ${token}` } }
     );
@@ -489,7 +489,7 @@ export const getVerifyQuestion = async () => {
 
   try {
     const response = await axios.get(
-      `http://localhost:10000/user/mathquestion`,
+      `https://rest-api-hp0n.onrender.com/user/mathquestion`,
       {
         headers: {
           Authorization: `Bearer ${token}`,
