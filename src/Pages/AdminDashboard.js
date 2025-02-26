@@ -635,7 +635,7 @@ const AdminDashboard = () => {
                   Leave Management
                 </h2>
               </div>
-              <AdminLeaveStatus />
+                <AdminLeaveStatus />
             </div>
           )}
           {activeTab === "Setting" && (

@@ -30,7 +30,8 @@ const AnnouncementModal = ({ title, message, onClose }) => {
           textAlign: "center",
           boxShadow: "0 8px 20px rgba(0, 0, 0, 0.3)",
           backdropFilter: "blur(15px)", // Glass effect
-          border: "1px solid rgba(255, 255, 255, 0.3)", // Subtle border
+          border: "1px solid rgba(255, 255, 255, 1)", // Subtle border
+          margin: "0 20px",
         }}
       >
         <h2 style={{ margin: "0 0 15px", color: "#fff", fontSize: "22px" }}>
@@ -50,6 +51,7 @@ const AnnouncementModal = ({ title, message, onClose }) => {
             cursor: "pointer",
             fontSize: "16px",
             transition: "all 0.3s ease-in-out",
+            marginTop: "20px",
           }}
           onMouseOver={(e) =>
             (e.target.style.background =
