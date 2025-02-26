@@ -7,9 +7,15 @@ import {
 } from "../service/Auth";
 import Header from "../component/Header";
 import Footer from "../component/Footer";
+import AnnouncementModal from "../component/AnnouncementModal";
 import LeaveForm from "../component/LeaveForm";
 import LeaveStatus from "../component/LeaveStatus";
-import { AttendanceApi, UserApi, getUserMessages } from "../service/Api";
+import {
+  AttendanceApi,
+  UserApi,
+  getUserMessages,
+  getAnnouncement,
+} from "../service/Api";
 import {
   ArrowPathIcon,
   ArrowRightStartOnRectangleIcon,
@@ -105,6 +111,9 @@ const DashBoard = () => {
   const [attendanceUpdated, setAttendanceUpdated] = useState(false);
   const notificationTimeout = useRef(null);
 
+  const [announcement, setAnnouncement] = useState(null);
+  const [showModal, setShowModal] = useState(false);
+
   const showNotification = (message, type) => {
     setNotification({ message, type });
 
@@ -114,6 +123,43 @@ const DashBoard = () => {
       setNotification(null);
     }, 3000);
   };
+
+  useEffect(() => {
+    const fetchAnnouncements = async () => {
+      if (isAuthenticated()) {
+        console.log("User is authenticated");
+        try {
+          const response = await getAnnouncement();
+
+          // Validate response structure before accessing data
+          if (
+            response?.data &&
+            Array.isArray(response.data) &&
+            response.data.length > 0
+          ) {
+            const { title, message } = response.data[0]; // Get first announcement
+            console.log(`Title: ${title}`);
+            console.log(`Message: ${message}`);
+
+            setAnnouncement({ title, message });
+            setShowModal(true); // Show modal only if there's an announcement
+          } else {
+            console.log("No announcements available.");
+            setAnnouncement(null); // Reset announcement if none found
+            setShowModal(false);
+          }
+        } catch (error) {
+          console.error("Failed to fetch announcements:", error);
+          setAnnouncement(null); // Prevent lingering old announcements
+          setShowModal(false);
+        }
+      } else {
+        console.log("User is not authenticated");
+      }
+    };
+
+    fetchAnnouncements();
+  }, []);
 
   const fetchUsers = useCallback(async () => {
     try {
@@ -257,6 +303,13 @@ const DashBoard = () => {
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-gray-100">
+      {showModal && (
+        <AnnouncementModal
+          title={announcement?.title}
+          message={announcement?.message}
+          onClose={() => setShowModal(false)}
+        />
+      )}
       {notification && <Notification {...notification} />}
       <Header />
       <main className="flex-grow p-3">
@@ -342,7 +395,7 @@ const DashBoard = () => {
             {/* Leave Form & Status */}
             <div className="flex flex-col justify-between h-full w-full md:w-1/2 bg-white rounded-2xl shadow-lg p-4">
               <div className="flex flex-col md:flex-col justify-between w-full gap-2">
-                <LeaveForm userId={userId} dept= {department} />
+                <LeaveForm userId={userId} dept={department} />
                 <LeaveStatus userId={userId} />
               </div>
             </div>

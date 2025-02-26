@@ -383,3 +383,68 @@ export const updateLeaveRequest = async (id, status) => {
     }
   }
 };
+
+//Make Announcement
+export const makeAnnouncement = async (title, message) => {
+  const token = localStorage.getItem("authToken");
+
+  const announcement = message;
+
+  if (!token) {
+    throw new Error("Missing authentication token");
+  }
+  try {
+    const response = await axios.post(
+      `https://rest-api-hp0n.onrender.com/admin/announcement`,
+      { title, announcement },
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error updating leave request:", error);
+
+    if (error.response) {
+      // Server responded with an error status
+      throw new Error(
+        error.response.data.error || "Failed to update leave request."
+      );
+    } else {
+      // Network error or request was not completed
+      throw new Error("Network error. Please try again later.");
+    }
+  }
+};
+
+//Get Announcements
+export const getAnnouncement = async () => {
+  const token = localStorage.getItem("authToken");
+
+  if (!token) {
+    throw new Error("Missing authentication token");
+  }
+
+  try {
+    const response = await axios.get(
+      `https://rest-api-hp0n.onrender.com/user/announcement`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+    return response.data;
+  } catch (error) {
+    if (error.response) {
+      // Handle known HTTP errors
+      console.error(`Error (${error.response.status}): ${error.response.data}`);
+    } else if (error.request) {
+      // Network error or no response from server
+      console.error("Network error:", error.request);
+    } else {
+      // Handle other errors (axios setup, etc.)
+      console.error("Unexpected error:", error.message);
+    }
+    throw error;
+  }
+};

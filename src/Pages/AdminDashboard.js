@@ -14,6 +14,7 @@ import {
   allData,
   searchUserByUserId,
   userDelete,
+  makeAnnouncement,
 } from "../service/Api";
 import {
   ArrowPathIcon,
@@ -43,6 +44,7 @@ const AdminDashboard = () => {
   const [foundUser, setFoundUser] = useState(null);
   const [showMessageComponent, setShowMessageComponent] = useState(false);
   const [message, setMessage] = useState("");
+  const [title, setTitle] = useState("");
   const [showPasswordReset, setShowPasswordReset] = useState(false);
 
   useEffect(() => {
@@ -233,11 +235,26 @@ const AdminDashboard = () => {
     }
   };
 
-  const handleAnouncement = async (message) => {
+  const handleAnnouncement = async () => {
+    if (!title.trim() || !message.trim()) {
+      alert("Title and message cannot be empty.");
+      return;
+    }
+
     try {
-      alert(message);
+      setLoading(true);
+      const response = await makeAnnouncement(title, message);
+      if (response.message === "Announcement created successfully") {
+        alert("Announcement created successfully");
+        setTitle("");
+        setMessage("");
+      } else {
+        alert("Failed to create announcement");
+      }
     } catch (error) {
       alert("Failed to send message");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -618,7 +635,7 @@ const AdminDashboard = () => {
                   Leave Management
                 </h2>
               </div>
-                <AdminLeaveStatus />
+              <AdminLeaveStatus />
             </div>
           )}
           {activeTab === "Setting" && (
@@ -720,21 +737,28 @@ const AdminDashboard = () => {
               </div>
               <div className="space-y-8">
                 <div className="bg-white rounded-2xl shadow-lg p-6">
-                  <h2 className="text-2xl font-bold mb-6">Make Anouncement</h2>
-                  <div className="flex gap-4 mb-8">
+                  <h2 className="text-2xl font-bold mb-6">Make Announcement</h2>
+                  <div className="flex flex-col gap-4 mb-8">
+                    <input
+                      type="text"
+                      value={title}
+                      onChange={(e) => setTitle(e.target.value)}
+                      placeholder="Enter a title"
+                      className="flex-1 px-4 py-2 border rounded-xl"
+                    />
                     <input
                       type="text"
                       value={message}
                       onChange={(e) => setMessage(e.target.value)}
-                      placeholder="Enter a Message"
-                      className="flex-1 px-4 py-2 border rounded-xl"
+                      placeholder="Enter a message"
+                      className="px-4 py-2 border rounded-xl"
                     />
                     <button
-                      onClick={() => handleAnouncement(message)}
-                      className="px-6 py-2 bg-cyan-600 text-white rounded-xl hover:bg-cyan-700"
-                      //disabled={loading}
+                      onClick={handleAnnouncement}
+                      className="px-6 py-2 bg-cyan-600 text-white rounded-xl hover:bg-cyan-700 disabled:opacity-50"
+                      disabled={loading}
                     >
-                      {/* {loading ? "Sending..." : "Send"} */}Send
+                      {loading ? "Sending..." : "Send"}
                     </button>
                   </div>
                 </div>
