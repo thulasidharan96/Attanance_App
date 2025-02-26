@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { LoginApi } from "../service/Api";
+import { useEffect, useState } from "react";
+import { LoginApi, serverUp } from "../service/Api";
 import {
   storeUserData,
   storeUserId,
@@ -111,6 +111,19 @@ export default function HomePage() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    const interval = setInterval(async () => {
+      try {
+        await serverUp();
+        console.log("Server is live");
+      } catch (error) {
+        console.error("Server is down:", error);
+      }
+    }, 10000); // Ping every 5 seconds
+
+    return () => clearInterval(interval); // Cleanup on unmount
+  }, []);
 
   if (isAdminAuthentication()) {
     return <Navigate to="/admin" />;

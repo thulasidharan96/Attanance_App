@@ -512,3 +512,23 @@ export const getVerifyQuestion = async () => {
     throw error;
   }
 };
+
+//server up
+export const serverUp = async () => {
+  try {
+    const response = await axios.get(`https://rest-api-hp0n.onrender.com/`);
+    return response.data;
+  } catch (error) {
+    if (error.response) {
+      // Handle known HTTP errors
+      console.error(`Error (${error.response.status}): ${error.response.data}`);
+    } else if (error.request) {
+      // Network error or no response from server
+      console.error("Network error:", error.request);
+    } else {
+      // Handle other errors (axios setup, etc.)
+      console.error("Unexpected error:", error.message);
+    }
+    throw error;
+  }
+};
