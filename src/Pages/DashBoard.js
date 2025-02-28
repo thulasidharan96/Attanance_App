@@ -127,7 +127,7 @@ const DashBoard = () => {
   useEffect(() => {
     const fetchAnnouncements = async () => {
       if (isAuthenticated()) {
-        console.log("User is authenticated");
+        //console.log("User is authenticated");
         try {
           const response = await getAnnouncement();
 
@@ -138,8 +138,8 @@ const DashBoard = () => {
             response.data.length > 0
           ) {
             const { title, message } = response.data[0]; // Get first announcement
-            console.log(`Title: ${title}`);
-            console.log(`Message: ${message}`);
+            //console.log(`Title: ${title}`);
+            //console.log(`Message: ${message}`);
 
             setAnnouncement({ title, message });
             setShowModal(true); // Show modal only if there's an announcement

@@ -635,7 +635,7 @@ const AdminDashboard = () => {
             <div className="space-y-8 flex flex-col justify-center">
               <div className="bg-gray-200 rounded-2xl shadow-lg p-2">
                 <h2 className="text-2xl font-bold flex items-center justify-center">
-                  Leave Management
+                  Leave Request Management
                 </h2>
               </div>
               <AdminLeaveStatus />
@@ -777,7 +777,8 @@ const AdminDashboard = () => {
         <MathVerify
           onSuccess={(answer) => {
             setShowDeleteVerification(false);
-            handleDeleteUser(foundUser._id, answer);
+            window.confirm("Are you sure you want to delete this user?") &&
+              handleDeleteUser(foundUser._id, answer);
           }}
           onClose={() => setShowDeleteVerification(false)}
         />
