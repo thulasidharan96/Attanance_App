@@ -5,6 +5,7 @@ import RegisterPage from './Pages/Registerpage';
 import DashBoard from './Pages/DashBoard';
 import MissingPage from './Pages/MissingPage';
 import AdminDashboard from './Pages/AdminDashboard';
+import InstallPWA from './component/InstallPWA';
 
 function App() {
   return (
