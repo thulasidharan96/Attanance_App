@@ -1,30 +1,23 @@
 import React from "react";
-import { BrowserRouter, Route, Routes } from "react-router-dom";
-import HomePage from "./Pages/HomePage";
-import RegisterPage from "./Pages/Registerpage";
-import DashBoard from "./Pages/DashBoard";
-import MissingPage from "./Pages/MissingPage";
-import AdminDashboard from "./Pages/AdminDashboard";
-import InstallPWA from "./component/InstallPWA";
+import ReactDOM from "react-dom/client";
+import App from "./App";
+import "./index.css";
 
-function App() {
-  return (
-    <BrowserRouter>
-      <div>
-        {/* Install PWA Button */}
-        <InstallPWA />
+const root = ReactDOM.createRoot(document.getElementById("root"));
 
-        <Routes>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/home" element={<HomePage />} />
-          <Route path="/register" element={<RegisterPage />} />
-          <Route path="/dashboard" element={<DashBoard />} />
-          <Route path="/admin" element={<AdminDashboard />} />
-          <Route path="*" element={<MissingPage />} />
-        </Routes>
-      </div>
-    </BrowserRouter>
-  );
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker
+    .register("/service-worker.js")
+    .then(() => console.log("Service Worker Registered"))
+    .catch((err) => console.error("Service Worker Failed:", err));
 }
 
-export default App;
+root.render(
+  <React.StrictMode>
+    <App />
+  </React.StrictMode>
+);
+
+// If you want to start measuring performance in your app, pass a function
+// to log results (for example: reportWebVitals(console.log))
+// or send to an analytics endpoint. Learn more: https://bit.ly/CRA-vitals
