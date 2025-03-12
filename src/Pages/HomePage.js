@@ -11,6 +11,7 @@ import { Link, Navigate } from "react-router-dom";
 import { isAdminAuthentication, isAuthenticated } from "../service/Auth";
 import Header from "../component/Header";
 import Footer from "../component/Footer";
+import InstallPWA from "../component/InstallPWA";
 
 export default function HomePage() {
   const initialStateErrors = {
@@ -133,6 +134,7 @@ export default function HomePage() {
 
   return (
     <div className="flex flex-col min-h-screen">
+      <InstallPWA />
       <Header />
       <main className="flex-grow flex items-center justify-center bg-slate-400 px-4 py-8">
         <div className="w-full max-w-md bg-white rounded-lg shadow-md overflow-hidden">
