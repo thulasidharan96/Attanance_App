@@ -23,8 +23,8 @@ const PWAInstallPrompt = () => {
   }, []);
 
   useEffect(() => {
-    // Ensure button state updates if deferredPrompt changes
-    if (!deferredPrompt) setShowInstallButton(false);
+    // Ensures button is updated when deferredPrompt changes
+    setShowInstallButton(deferredPrompt !== null);
   }, [deferredPrompt]);
 
   const handleInstallClick = async () => {
