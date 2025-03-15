@@ -14,36 +14,44 @@ const PWAInstallPrompt = () => {
 
     window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
 
+    // Fallback: Show button if event doesn’t fire within 5 seconds
+    const timeout = setTimeout(() => {
+      if (!deferredPrompt) setShowInstallButton(true);
+    }, 5000);
+
     return () => {
       window.removeEventListener(
         "beforeinstallprompt",
         handleBeforeInstallPrompt
       );
+      clearTimeout(timeout);
     };
   }, []);
 
-  const handleInstallClick = () => {
+  const handleInstallClick = async () => {
     if (!deferredPrompt) return;
+
     deferredPrompt.prompt();
-    deferredPrompt.userChoice.then((choiceResult) => {
-      if (choiceResult.outcome === "accepted") {
-        console.log("User accepted PWA installation");
-      } else {
-        console.log("User dismissed PWA installation");
-      }
-      setDeferredPrompt(null);
-      setShowInstallButton(false);
-    });
+    const { outcome } = await deferredPrompt.userChoice;
+
+    if (outcome === "accepted") {
+      console.log("User accepted PWA installation");
+    } else {
+      console.log("User dismissed PWA installation");
+    }
+
+    setDeferredPrompt(null);
+    setShowInstallButton(false);
   };
 
   return (
     <>
       {showInstallButton && (
         <div className="fixed bottom-8 right-8 z-50">
-          {/* Pulsing background effect */}
+          {/* Pulsing animation */}
           <div className="absolute inset-0 rounded-full bg-blue-400 opacity-30 animate-ping"></div>
 
-          {/* Main circular button */}
+          {/* Install Button */}
           <button
             onClick={handleInstallClick}
             className="relative flex flex-col items-center justify-center w-20 h-20 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 border-2 border-white"
@@ -54,11 +62,6 @@ const PWAInstallPrompt = () => {
               <span className="text-xs font-medium">Install</span>
             </div>
           </button>
-
-          {/* Tooltip that appears on hover */}
-          <div className="absolute top-0 right-24 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-white text-gray-800 p-2 rounded-lg shadow-md text-sm whitespace-nowrap">
-            Install our app for a better experience!
-          </div>
         </div>
       )}
     </>
