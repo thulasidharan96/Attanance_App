@@ -14,19 +14,18 @@ const PWAInstallPrompt = () => {
 
     window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
 
-    // Fallback: Show button if event doesn’t fire within 5 seconds
-    const timeout = setTimeout(() => {
-      if (!deferredPrompt) setShowInstallButton(true);
-    }, 5000);
-
     return () => {
       window.removeEventListener(
         "beforeinstallprompt",
         handleBeforeInstallPrompt
       );
-      clearTimeout(timeout);
     };
   }, []);
+
+  useEffect(() => {
+    // Ensure button state updates if deferredPrompt changes
+    if (!deferredPrompt) setShowInstallButton(false);
+  }, [deferredPrompt]);
 
   const handleInstallClick = async () => {
     if (!deferredPrompt) return;
@@ -41,7 +40,6 @@ const PWAInstallPrompt = () => {
     }
 
     setDeferredPrompt(null);
-    setShowInstallButton(false);
   };
 
   return (
