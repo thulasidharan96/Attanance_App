@@ -5,10 +5,12 @@ import RegisterPage from "./Pages/Registerpage";
 import DashBoard from "./Pages/DashBoard";
 import MissingPage from "./Pages/MissingPage";
 import AdminDashboard from "./Pages/AdminDashboard";
+import PWAInstallPrompt from "./component/InstallPWA"; // Import install prompt
 
 function App() {
   return (
     <BrowserRouter>
+      <PWAInstallPrompt />{" "}
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/home" element={<HomePage />} />
